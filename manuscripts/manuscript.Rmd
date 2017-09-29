@@ -58,12 +58,12 @@ The first of these we shall refer to as Reed's Paradox, owing to the mathematica
 
 ### Clark's Paradox: $M < D$
 
-@Clark1987 was among the first attempts to resolve Reed's Paradox. @Clark1987 (quite correctly, as we will see), identified the crux of Reed's Paradox as the absence of measurement uncertainty:
+@Clark1986 was among the first attempts to resolve Reed's Paradox. @Clark1986 (quite correctly, as we will see), identified the crux of Reed's Paradox as the absence of measurement uncertainty:
 
 > An important tacit assumption in Reed’s analysis, as in the other works referred
 to above, is that the recruitment level X is known accurately prior to the harvest decision, [...] In the case of fishery resources, the stock level X is almost never known very accurately, owing to the difficulty of observing fish in their natural environment.
 
-Unfortunately, @Clark1987 was unable to solve the resulting problem exactly, but had to adopt an almost equally troublesome assumption:
+Unfortunately, @Clark1986 was unable to solve the resulting problem exactly, but had to adopt an almost equally troublesome assumption:
 
 > For reasons of tractability, we shall adopt the simplifying assumption that the escapement level S, is known exactly at the end of that period. (The mathematical difficulty
 of the problem increases markedly if this assumption is
@@ -83,9 +83,19 @@ While other attempts to introduce measurement error have been considered, each r
 
 Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas.  Instead, most well-managaged fisheries operate on rules that are more the result of common sense than mathematical optimization.  While details differ, the basic approach can be thought of as starting with the deterministic notion of $B_{MSY}$ and corresponding optimal fishing level $F_{MSY}$ as a way of determining an Overfishing Limit, (OFL), which is then adjusted to some lower level, Allowable Biological Catch (ABC) to reflect uncertainty in the stock assessment.  ABC is then adjusted lower once again, to determine a Total Allowable Catch, (TAC), reflecting uncertainty in reported catch or other uncertainty.  
 
+## POMDPs: An optimal treatment of measurement uncertainty
+
+As discussed above, absent the short-cut provided by Reed's theorems, solving for the optimal management policy in a stochastically fluctuating population involves a Markov Decision Process (MDP), commonly referred to in ecological literature by its solution method, Stochastic Dynamic Programming (SDP). Once measurement uncertainty is introduced, the problem becomes a Partially Observed Markov Decision Process (POMDP, not be confused with a partially observed or hidden Markov model, HMM, in which no decision process is involved).  As in the case of MDP, such problems can be solved by existing and well-studied algorithms. While not unknown to the conservation literature [@Williams2009], algorithms for POMDP have historically scaled quite poorly, and their application has been restricted to contexts with only a handful of possible states and actions [e.g. @Chades, @Fackler, ....].  POMDP algorithms remain a very active area in artificial intellegence, and by adapting recent algorithmic developments [@Kurtwani] from that field we are able to find solutions for the considerably more complex problems such as the case of fisheries managment, which requires on the order of 100 states and actions to provide sufficient numerical resolution.  <!--  -->
+
+We will not summarize all of the technical details here which are already well-developed in the existing POMDP literature, but rather we focus on providing the essential intuition behind decisions under a POMDP as compared to a perfectly observed system.  For readers interested in exploring or applying these methods in more depth, we have developed a preliminary R package which can be used to replicate any of the results presented here [@Rsarsop].
 
 
 
+## Results 
+
+Figure 1 shows the results of simulation 
+
+-------------
 
 ------
 
