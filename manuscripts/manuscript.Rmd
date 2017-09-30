@@ -33,7 +33,7 @@ Approaches for decision making under uncertainty in ecological systems can be di
 
 The area of fisheries conservation and management has long been both a crucible and proving ground for the theory of ecological management, including topics such as adaptive management [@Walters], ecosystem-based management [@Levin2008] to resilience thinking [@Holling; @May] and back to the birth of resource economics [@Beverton; @Scheffer], thanks to its global relevance, long history, and readily available data.  Consequently, understanding the impact of measurement uncertainty in this rich and well-studied context will have implications for both resource management and conservation efforts in other domains, many of which draw on concepts established or tested in fisheries ecosystems.  We compare the results of managing simulated fish stocks under the existing optimal control approach, a heuristic approach that more closely resembles today's management practices, and a newly proposed approach that provides a more rigorous treatment of uncertainty.
 
-## Methods
+## Model
 
 We consider the management problem of setting catch quotas for a marine fishery in the face of imperfect information about the current stock size and uncertainty about future recruitment.  To facilitate tractability and intepretation, we will consider a simple and well-studied model of population growth (stock recruitment) in marine fisheries, the Graham-Schaefer model:
 
@@ -77,27 +77,144 @@ Using different but still implicitly approximate results nearly two decades late
 
 > It may seem counter-intuitive that a measurement error causes lower expected escapements below the deterministic fishery closure threshold.
 
-While other attempts to introduce measurement error have been considered, each relies on various approximations that similarly alter the problem, such as assuming the solution must be of 'constant-escapement' type [@.....].  
+While other attempts to introduce measurement error have been considered, each relies on various approximations that similarly alter the problem, such as assuming the solution must be of 'constant-escapement' type [@Ludwig1981; @Roughgarden1996; @Engen1997;  @Moxnes2003].  Here we will illustrate the use of powerful modern algorithms that will permit a more direct solution to the case of measurement uncertainty.  First we will introduce the more heuristic alternative to addressing uncertainty, which more accurately reflects both intuition and actual management.  
 
 ## Uncertainty in practice
 
-Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas.  Instead, most well-managaged fisheries operate on rules that are more the result of common sense than mathematical optimization.  While details differ, the basic approach can be thought of as starting with the deterministic notion of $B_{MSY}$ and corresponding optimal fishing level $F_{MSY}$ as a way of determining an Overfishing Limit, (OFL), which is then adjusted to some lower level, Allowable Biological Catch (ABC) to reflect uncertainty in the stock assessment.  ABC is then adjusted lower once again, to determine a Total Allowable Catch, (TAC), reflecting uncertainty in reported catch or other uncertainty.  
+Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas.  Instead, most well-managaged fisheries operate on rules that are more the result of common sense than mathematical optimization.  While details differ, the basic approach can be thought of as starting with the deterministic notion of $B_{MSY}$ and corresponding optimal fishing level $F_{MSY}$ as a way of determining an Overfishing Limit, (OFL), which is then adjusted to some lower level, Allowable Biological Catch (ABC) to reflect uncertainty in the stock assessment.  ABC is then adjusted lower once again, to determine a Total Allowable Catch, (TAC), reflecting uncertainty in reported catch or other uncertainty.  To capture this process, we will consider a policy in which the harvest quota is set at a TAC of 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. We will refer to both MSY policies and this more cautious adjustment of the MSY policy as "constant mortality" policies, since they are defined by a constant fishing mortality, $F$, rather than by a constant escapement, $S$.  
+
+Note that compared to Reed's constant escapement, this policy still permits some level of harvest even when stocks are measured below $B_{MSY}$.  
 
 ## POMDPs: An optimal treatment of measurement uncertainty
 
-As discussed above, absent the short-cut provided by Reed's theorems, solving for the optimal management policy in a stochastically fluctuating population involves a Markov Decision Process (MDP), commonly referred to in ecological literature by its solution method, Stochastic Dynamic Programming (SDP). Once measurement uncertainty is introduced, the problem becomes a Partially Observed Markov Decision Process (POMDP, not be confused with a partially observed or hidden Markov model, HMM, in which no decision process is involved).  As in the case of MDP, such problems can be solved by existing and well-studied algorithms. While not unknown to the conservation literature [@Williams2009], algorithms for POMDP have historically scaled quite poorly, and their application has been restricted to contexts with only a handful of possible states and actions [e.g. @Chades, @Fackler, ....].  POMDP algorithms remain a very active area in artificial intellegence, and by adapting recent algorithmic developments [@Kurtwani] from that field we are able to find solutions for the considerably more complex problems such as the case of fisheries managment, which requires on the order of 100 states and actions to provide sufficient numerical resolution.  <!--  -->
+As discussed above, absent the short-cut provided by Reed's theorems, solving for the optimal management policy in a stochastically fluctuating population involves a Markov Decision Process (MDP), commonly referred to in ecological literature by its solution method, Stochastic Dynamic Programming (SDP). Once measurement uncertainty is introduced, the problem becomes a Partially Observed Markov Decision Process (POMDP, not be confused with a partially observed or hidden Markov model, HMM, in which no decision process is involved).  The POMDP problem is posed identically to that of the MDP problem, with the addition of an observation process.  The POMDP problem for fisheries question considered here can be summarized as follows:
 
-We will not summarize all of the technical details here which are already well-developed in the existing POMDP literature, but rather we focus on providing the essential intuition behind decisions under a POMDP as compared to a perfectly observed system.  For readers interested in exploring or applying these methods in more depth, we have developed a preliminary R package which can be used to replicate any of the results presented here [@Rsarsop].
+- Transition function (state equation): $T(x_t, x_{t+1}, a_t)$: the probability that a system is in state $x_{t+1}$ at time $t+1$ given that it began in state $x_t$ at time $t$ and the manager took action $a_t$.  In our context, this relationship is given by the Graham-Schaefer stock recruitment function $f$ with normally distributed growth uncertainty $\mathcal{N_T}(f(x_t,a_t), \sigma_g)$, truncated at zero to exclude negative population sizes.
+
+- Observation function: $O(x_t,y_t,a_t)$ the probability of observing state $y$ given a system in state $x$.  In principle, the action chosen can influence the precision of the observation. In our case, we simply assume normally distributed errors around the true state, $y \sim \mathcal{N_T}(x, \sigma_m)$, truncated at zero to exclude negative population sizes.  
+
+- Utility function: $U(x_t,a_t)$, the utility recieved at time $t$ for taking action $a_t$, given that the system is in state $x_t$.  For simplicity of analysis, we will simply set the utility to be equal to the harvested stock: $U(x_t, a_t) = \min(x_t - a_t, 0)$, indicating that realized harvest cannot be negative.  This choice ensures that in the case of no uncertainty ($\sigma_g = \sigma_m = 0$), the optimal solution matches that expected under a simple MSY calculation. More realistic utility functions may include diminishing returns with increasing harvest (supply and demand effects), and the cost of fishing, both of which act to suppress large harvests. By focusing on a simple utility we can be sure that our comparison to MSY is driven by the treatment of uncertainty rather than merely differing economic assumptions.  
+
+The optimization problem is to select the action $a_t$ that will maximize the net present utility over all time. Future utility may be discounted by a factor $\gamma$, so that a value  $V$ in $t$ year is valued at $\gamma^t V$ today.  
 
 
+Numerically, each of these functions are defined over a discrete set of possible states, observations, and actions, and can thus be represented as a collection of matrices or tensors.  As in the case of MDP [@Marescot2013], the POMDP problem can be solved by existing and well-studied algorithms. While not unknown to the conservation literature [@Williams2009], algorithms for POMDP have historically scaled quite poorly, and their application has been restricted to contexts with only a handful of possible states and actions [e.g. @Chades, @Fackler, ....].  POMDP algorithms remain a very active area in artificial intellegence, and by adapting recent algorithmic developments [@Kurniawati2008] from that field we are able to find solutions for the considerably more complex problems such as the case of fisheries managment, which requires on the order of 100 states and actions to provide sufficient numerical resolution. Readers interested in the technical details of these algorithms should consult the extensive literature in in POMDP methods. For those interested in exploring or applying these methods, we have developed a preliminary R package, @sarsop, which can be used to replicate any of the results presented here and explore other variations.  
 
 ## Results 
 
-Figure 1 shows the results of simulation 
+- Replicate simulations 
+
+- non-pomdp policies
+
+- pomdp policies
+
+- historical data.  
+
+
+**A POMDP policy reflects all prior observations**.
+The essential difference in a POMDP policy compared to either that of constant escapement $S$ or constant mortality $F$ is that nothing is just a constant -- instead, the harvest quota recommended by POMDP will always depend not only on the most recent observation of the stock size, but on all previous stock sizes.  This dependency can be expressed in terms of a *prior belief* -- if all prior observations have led one to expect that the stock should be relatively small, a single observation of a very large stock is met by some skepticism under a POMDP, and the resulting harvest recommended by POMDP can differ substantially from that recommended by constant escapement or constant mortaility, which by definition consider only the most recent observation.  If the observation is largely consistent with prior expectations, a POMDP policy will be more similar to that of the constant escapement policy, though with a natural level of precaution built in to allow for the possibility of error in measurement coupled with a negative shock to growth.  
+
+
+
+
+
+
+
+
 
 -------------
 
-------
+## Discussion
+
+
+### A practical implementation?
+
+
+The year-to-year variation in quotas necessary under either a constant escapement policy
+or a policy in which quotas are set by POMDP can seem impractical from a top-down
+management perspective, particularly when compared to the simplicity of fixing a mortality of fishing $F_{MSY}$.
+However, the economist's perspective reveals that this may not be as unrealistic as it may first appear.
+
+Fisheries today are not managed at either their maximum ecological or economic potential.  
+Taken as a whole, most ocean fisheries yield a net negative economic return
+[@FAO2009], with fishing persisting only with the support of government subsidies [@Arnason2012], 
+meanwhile some 68% of global fisheries are not in good biological condition [@Costello2016].
+While the causes for this are both complex and numerous, we have seen that both the economic
+inefficiency and ecological health are hurt by current policies, including
+both MSY and it's more precautionary variants, as these all permit some level of harvest
+below $B_{MSY}$.  Economists have for some time observed these inherent 
+inefficiencies, and argued that the establishment of property rights in fisheries [@Arnason2012].
+Approaches such as individual transferable quotas (ITQs) would incentivise
+fisheries behavior to converge towards the more dynamic harvests of a constant
+escapement policy, as doing so would increase the value of an individual's share.
+@Arnason2012 argues that properly implemented, this would lead fisheries to desire
+an even more dynamic adjustment of the TAC to maximize the value of their shares,
+rather than to oppose the  @Costello2016 refers to this as Rights Based Fisheries 
+Mangement, (RBFM), and it is precisely the willingness to shut down harvests for 
+over-exploited fisheries that explains the faster recovery they predict under RBFM
+relative to MSY. Though the @Costello2016 RBFM projections are based on a simple 
+constant escapement policy which ignores uncertainty, the logic is quite general:
+given property rights to establish an efficient market, it is not unrealistic to
+expect fisheries adopting such dynamic polices. Indeed, the greater adoption of 
+RBFM should spur the adoption of POMDP approaches as rights-holders seek strategies
+that maximize the share values.  This is not to dismiss the immense practical
+challenges in such an implementation, but to observe that such dynamic, better-performing
+policies can be seen to embrace rather than ignore economic realities.  Notably,
+the optimization approach assumed in POMDP can be easily adapted to reflect other
+constraints such as the cost of idle fleets if a fishery is closed, or include
+the value of ecosystem services from fish not harvested [@Halpern2013].  <!--Alternate utility functions do not increase
+the complexity of the solution.  Note that fixed cost of a fleet doesn't alter the answer at all:
+if you have the strategy that optimizes your profits when you have no expenses, you don't do a 
+different strategy that gets less profit unless it will also lower costs.  So whether or not
+you have to pay a fixed fee each year for boats, even if those boats are idle, is no reason
+not to leave those boats idle.  only if leaving them idle is *more expensive* than operating them 
+does this make sense, which seems unlikely.  -->
+
+<!-- True whether or not it is implemented in effort-based control or as a TAC-->
+
+
+<!--
+Moreover, regulating fishing effort rather than fishing catch, i.e. opening
+a fishery for only certain days of the year rather than limiting dockside catch, is both
+economically less efficient: for instance, it increasing costs due to the incentive to use more or larger fishing boats
+to maximize catch in that time, and it decreases profits since much of the year's catch
+is landed in a short window where it drives down prices, instead of being sold fresh throughout
+the year. Because regulating effort is both less direct and more difficult to enforce, the uncertainty
+in the expected harvest is also larger than in regulating catch.  
+-->
+
+
+
+It is precisely this reasoning which explains the broad patterns of recovery
+observed in the landmark paper @Costello2016, which compares future of global
+fisheries under a Rights Based Fisheries Mangement (RBFM), fishing at MSY,
+and "buisness as usual" (BAU) scenario.  Their analysis assumes that a RBFM
+approach should achieve the economically optimal policy of constant-escapement,
+which alone explains why RBFM should see both faster recovery and higher 
+economic yields than MSY, as we have just described. The substantial detail their
+analysis introduces with respect to the dynamics of over 4000 individual stocks
+as well as additional economic knock-on effects from managing based on quotas
+rather than fishing effort permit them to offer quantitatively precise 
+estimates regarding the time required and economic value generated by such
+recovery, but are not essential to understand the broad pattern that suggests
+that nearly all stocks should recover under either an RBFM or MSY-style 
+management, but that the recovery would be fastest and the economic benefits
+greatest under the former.  That conclusion was already implicit in how
+these models are defined. 
+
+
+
+
+
+
+
+
+
+
+
+
+-------------
+
 
 A fundamental concept to the management of any natural population is the notion of Maximum Sustainable Yield, MSY. The notion of MSY is rooted in the determinstic models dating back to foundational work in resource economics and ecological management half a century ago [@Berverton; @Scheffer].  Though the concept has been the focus of significant criticism for some time [e.g. @Botsford_nature_piece] that ctitique has been largely on the "Maximum" part, while the existence of a "Sustainable Yield."  
 
