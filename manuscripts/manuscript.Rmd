@@ -104,6 +104,8 @@ Numerically, each of these functions are defined over a discrete set of possible
 
 - Replicate simulations 
 
+Moderate / modest sigma_g, sigma_m
+
 - non-pomdp policies
 
 - pomdp policies
@@ -115,17 +117,9 @@ Numerically, each of these functions are defined over a discrete set of possible
 The essential difference in a POMDP policy compared to either that of constant escapement $S$ or constant mortality $F$ is that nothing is just a constant -- instead, the harvest quota recommended by POMDP will always depend not only on the most recent observation of the stock size, but on all previous stock sizes.  This dependency can be expressed in terms of a *prior belief* -- if all prior observations have led one to expect that the stock should be relatively small, a single observation of a very large stock is met by some skepticism under a POMDP, and the resulting harvest recommended by POMDP can differ substantially from that recommended by constant escapement or constant mortaility, which by definition consider only the most recent observation.  If the observation is largely consistent with prior expectations, a POMDP policy will be more similar to that of the constant escapement policy, though with a natural level of precaution built in to allow for the possibility of error in measurement coupled with a negative shock to growth.  
 
 
-
-
-
-
-
-
-
--------------
-
 ## Discussion
 
+Is it surprising that POMDP model should do better?  Recall that Reed found stochasticity to make no difference, the deterministic model performs identically.  
 
 ### A practical implementation?
 
@@ -134,7 +128,6 @@ The year-to-year variation in quotas necessary under either a constant escapemen
 or a policy in which quotas are set by POMDP can seem impractical from a top-down
 management perspective, particularly when compared to the simplicity of fixing a mortality of fishing $F_{MSY}$.
 However, the economist's perspective reveals that this may not be as unrealistic as it may first appear.
-
 Fisheries today are not managed at either their maximum ecological or economic potential.  
 Taken as a whole, most ocean fisheries yield a net negative economic return
 [@FAO2009], with fishing persisting only with the support of government subsidies [@Arnason2012], 
@@ -185,6 +178,10 @@ in the expected harvest is also larger than in regulating catch.
 
 
 
+
+-----------------
+<!-- MISC draft text -->
+
 It is precisely this reasoning which explains the broad patterns of recovery
 observed in the landmark paper @Costello2016, which compares future of global
 fisheries under a Rights Based Fisheries Mangement (RBFM), fishing at MSY,
@@ -201,11 +198,6 @@ that nearly all stocks should recover under either an RBFM or MSY-style
 management, but that the recovery would be fastest and the economic benefits
 greatest under the former.  That conclusion was already implicit in how
 these models are defined. 
-
-
-
-
-
 
 
 
@@ -277,9 +269,6 @@ Conclusions:
 
 - failing to account for uncertainty properly can lead to erroneous conclusions
 - Prior beliefs (reflecting prior observations) matter.
-
-
-
 
 
 
