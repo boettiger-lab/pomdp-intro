@@ -1,0 +1,223 @@
+---
+output: github_document
+---
+
+Computes model parameter estimates on each `stockid` in RAM (after normalizing data) using nimble. Then, estimate common stock measurement (Bmsy, MSY, PGY).
+
+- Currently parameter estimates are just MLE. Should do Bayesian version (slower of course, and tricky to summarize; maybe just as sds around estimates.)
+
+```{r aethetics, include=FALSE}
+library(printr)
+knitr::opts_chunk$set(message=FALSE, comment="")
+```
+  
+```{r libraries}
+library(tidyverse)
+library(nimble)
+```
+
+
+
+```{r}
+download.file("https://depts.washington.edu/ramlegac/wordpress/databaseVersions/RLSADB_v3.0_(assessment_data_only)_excel.zip",
+              "ramlegacy.zip")
+```
+
+```{r}
+path <- unzip("ramlegacy.zip")
+sheets <- readxl::excel_sheets(path)
+ram <- lapply(sheets, readxl::read_excel, path = path)
+names(ram) <- sheets
+unlink("ramlegacy.zip")
+unlink("RLSADB v3.0 (assessment data only).xlsx")
+ramlegacy <- 
+  ram$timeseries_values_views %>%
+  select(assessid, stockid, stocklong, year, SSB, TC) %>%
+  left_join(ram$stock) %>%
+  left_join(ram$area) %>%
+  select(assessid, stockid, scientificname, 
+         commonname, areaname, country, year, 
+         SSB, TC) %>%
+  left_join(ram$timeseries_units_views %>%
+              rename(TC_units = TC, SSB_units = SSB)) %>%
+  select(scientificname, commonname, 
+         stockid, areaname, country, year, 
+         SSB, TC, SSB_units, TC_units)
+```
+
+
+Let's filter out missing data, non-matching units, and obvious reporting errors (catch exceeding total spawning biomass), then we rescale each series into the 0,1 by appropriate choice of units:
+
+```{r}
+df2 <- ramlegacy %>% 
+  filter(!is.na(SSB), !is.na(TC)) %>%
+  filter(SSB_units == "MT", TC_units=="MT") %>% 
+  filter(SSB > TC) %>%
+  select(-SSB_units, -TC_units) %>% 
+  group_by(stockid) %>%
+  mutate(scaled_catch = TC / max(SSB),
+         scaled_biomass = SSB / max(SSB)) 
+```
+
+```{r subset}
+stock_ids <- c("PLAICNS", "ARGHAKENARG")
+examples <- df2 %>% filter(stockid %in% stock_ids)
+```
+
+
+
+```{r}
+## Model does not estimate sigma_m; data is insufficient to do so.
+## Note that RAM stock estimates are not always direct measurements, can be artifically smooth, underestimating sigma_g
+
+gs_code  <- nimble::nimbleCode({
+    
+  r ~ dunif(0, 2)
+  K ~ dunif(0, 2)
+  sigma ~ dunif(0, 1)
+  
+  x[1] <- x0
+  for(t in 1:(N-1)){
+    mu[t] <- x[t] + x[t] * r * (1 - x[t] / K) - min(a[t],x[t])
+    x[t+1] ~ dnorm(mu[t], sd = sigma)
+  }
+
+  
+})
+
+fit_models <- function(fish, code){
+  # fish <- examples %>% filter(stockid == stock_ids[1])
+  
+  ## Rescale data
+  N <- dim(fish)[1]
+  scaled_data <- data.frame(t = 1:N, y = fish$scaled_biomass, a = fish$scaled_catch)
+  data = data.frame(x = scaled_data$y)
+
+  ## Compile  model
+  constants <- list(N = N, a = scaled_data$a)
+  inits <- list(r = 0.5, K = 0.5, sigma = 0.02, x0 = scaled_data$y[1])
+  model <- nimbleModel(code, constants, data, inits)
+  C_model <- compileNimble(model)
+  
+  mcmcspec <- configureMCMC(model, thin = 1e2)
+  mcmc <- buildMCMC(mcmcspec)
+  Cmcmc <- compileNimble(mcmc, project = model)
+  Cmcmc$run(1e6)
+  
+  
+  samples <- as.data.frame(as.matrix(Cmcmc$mvSamples))
+  burnin <- 1:(0.05 * dim(samples)[1]) # drop first 5%
+  samples <- samples[-burnin,1:(length(inits) - 1)] # drop raised vars, burnin
+  
+  #gather(samples) %>% ggplot() + geom_density(aes(value)) + facet_wrap(~key, scale='free')
+   
+  ## Return fit
+  data.frame(stockid = fish$stockid[1],
+             species = fish$commonname[1],
+             r = mean(samples$r),
+             K = mean(samples$K),
+             sigma_g = mean(samples$sigma),
+             r_sd = sd(samples$r),
+             K_sd = sd(samples$K),
+             sigma_g_sd = sd(samples$sigma),
+             stringsAsFactors = FALSE)
+  
+}
+```
+
+
+```{r}
+fits <- examples %>% do(fit_models(., code=gs_code))
+fits 
+```
+
+Do the estimates make sense?
+
+```{r}
+examples %>% ungroup() %>%
+  select(year, scaled_biomass, scaled_catch, commonname) %>%
+  gather(stock, biomass, -year, -commonname) %>%
+  ggplot(aes(year, biomass, col=stock)) + 
+  geom_line() + facet_wrap(~commonname, scales = "free")
+```
+
+
+```{r}
+pars <- fits %>% ungroup() %>% select(species, r, K, sigma_g) 
+```
+
+
+```{r}
+# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
+library(sarsop)       # the main POMDP package
+library(tidyverse)    # for munging and plotting
+library(parallel)
+options(mc.cores = 6) # Reserve ~ 10 GB per core
+log_dir <- "pomdp_intro"
+
+## Classic Graham-Schaefer. Note that recruitment occurs *before* harvest
+f <- function(x, h){ 
+  x + x * r * (1 - x / K) - pmin(x,h)
+}
+reward_fn <- function(x,h) pmin(x,h)
+discount <- 1
+
+## Discretize space
+states <- seq(0,4, length=150)
+actions <- states
+observations <- states
+
+## All parameter values combinations for which we want solutions
+meta <- expand.grid(species = pars$species, 
+                    sigma_m = c(0, 0.1, 0.2),
+                    stringsAsFactors = FALSE) %>%
+  left_join(pars)
+
+## Create the models
+models <- 
+  parallel::mclapply(1:dim(meta)[1], 
+                     function(i){
+                       fisheries_matrices(
+                         states = states,
+                         actions = actions,
+                         observed_states = observations,
+                         reward_fn = reward_fn,
+                         f = f,
+                         sigma_g = meta[i,"sigma_g"][[1]],
+                         sigma_m = meta[i,"sigma_m"][[1]],
+                         noise = "normal")
+                     })
+
+## log metadata associated with each run
+
+dir.create(log_dir)
+
+## POMDP solution (slow, >20,000 seconds per loop memory intensive)
+system.time(
+  alphas <- 
+    parallel::mclapply(1:length(models), 
+    function(i){
+      log_data <- data.frame(id = "pomdp_historical", 
+                             model = "gs", 
+                             r = meta[i, "r"][[1]], 
+                             K = meta[i, "K"][[1]], 
+                             sigma_g = meta[i,"sigma_g"][[1]], 
+                             sigma_m = meta[i,"sigma_m"][[1]], 
+                             noise = "normal")
+      
+      sarsop(models[[i]]$transition,
+             models[[i]]$observation,
+             models[[i]]$reward,
+             discount = discount,
+             precision = 0.00000002,
+             timeout = 20000,
+             log_dir = log_dir,
+             log_data = log_data)
+    })
+)
+
+
+
+```
+
+
