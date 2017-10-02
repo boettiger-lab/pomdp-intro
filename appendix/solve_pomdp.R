@@ -40,20 +40,32 @@ models <-
                      })
 
 ## log metadata associated with each run
-log_data <- data.frame(id = id, 
-                       model = "gs", 
-                       r = r, 
-                       K = K, 
-                       sigma_g = sigma_g, 
-                       sigma_m = sigma_m, 
-                       noise = "normal")
+
 dir.create(log_dir)
 
 ## POMDP solution (slow, >10,000 seconds per loop memory intensive)
-system.time({
-  alpha <- sarsop(m$transition, m$observation, m$reward, discount, 
-                  log_data = log_data, log_dir = log_dir,
-                  precision = .000002, timeout = 10000)
-})
+system.time(
+  alphas <- 
+    mclapply(1:length(models), 
+    function(i){
+      log_data <- data.frame(id = "pomdp_intro", 
+                             model = "gs", 
+                             r = r, 
+                             K = K, 
+                             sigma_g = meta[i,"sigma_g"][[1]], 
+                             sigma_m = meta[i,"sigma_m"][[1]], 
+                             noise = "normal")
+      
+      sarsop(models[[i]]$transition,
+             models[[i]]$observation,
+             models[[i]]$reward,
+             discount = discount,
+             precision = 0.00000002,
+             timeout = 10000,
+             log_dir = log_dir,
+             log_data = log_data)
+    },
+    mc.cores = mc.cores)
+)
 
 
