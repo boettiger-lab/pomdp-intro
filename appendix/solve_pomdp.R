@@ -46,7 +46,7 @@ dir.create(log_dir)
 ## POMDP solution (slow, >10,000 seconds per loop memory intensive)
 system.time(
   alphas <- 
-    mclapply(1:length(models), 
+    parallel::mclapply(1:length(models), 
     function(i){
       log_data <- data.frame(id = "pomdp_intro", 
                              model = "gs", 
@@ -64,8 +64,7 @@ system.time(
              timeout = 10000,
              log_dir = log_dir,
              log_data = log_data)
-    },
-    mc.cores = mc.cores)
+    })
 )
 
 
