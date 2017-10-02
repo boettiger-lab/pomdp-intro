@@ -154,26 +154,46 @@ library(tidyverse)    # for munging and plotting
 library(parallel)
 options(mc.cores = 6) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_intro"
+```
 
+
+```{r}
 ## Classic Graham-Schaefer. Note that recruitment occurs *before* harvest
-f <- function(x, h){ 
-  x + x * r * (1 - x / K) - pmin(x,h)
+gs <- function(r,K){
+  function(x, h){ 
+    x + x * r * (1 - x / K) - pmin(x,h)
+  }
 }
 reward_fn <- function(x,h) pmin(x,h)
 discount <- 1
+```
+
 
 ## Discretize space
+
+Note that the large values of $K$ require we carry the numerical grid out further.  
+
+```{r}
 states <- seq(0,4, length=150)
 actions <- states
 observations <- states
+```
+
 
 ## All parameter values combinations for which we want solutions
+
+```{r}
 meta <- expand.grid(species = pars$species, 
                     sigma_m = c(0, 0.1, 0.2),
                     stringsAsFactors = FALSE) %>%
   left_join(pars)
+meta
+```
 
 ## Create the models
+
+
+```{r}
 models <- 
   parallel::mclapply(1:dim(meta)[1], 
                      function(i){
@@ -182,7 +202,7 @@ models <-
                          actions = actions,
                          observed_states = observations,
                          reward_fn = reward_fn,
-                         f = f,
+                         f = gs(meta[i, "r"][[1]], meta[i, "K"][[1]]),
                          sigma_g = meta[i,"sigma_g"][[1]],
                          sigma_m = meta[i,"sigma_m"][[1]],
                          noise = "normal")
@@ -218,6 +238,35 @@ system.time(
 
 
 
+```
+
+
+
+## Comparison to the static models
+
+
+
+```{r eval=FALSE}
+## A generic routine to find stock size (x) which maximizes 
+## growth rate (f(x,0) - x, where x_t+1 = f(x_t))
+
+f <- gs(pars[i,"r"][[1]], pars[i, "K"][[1]])
+
+S_star <- optimize(function(x) -f(x,0) + x / discount, 
+                   c(0, 2*K))$minimum
+
+B_MSY <- S_star
+MSY <- f(B_MSY,0) - B_MSY 
+
+F_MSY <- MSY / B_MSY  
+F_PGY = 0.8 * F_MSY
+
+
+
+policies <- list(
+  det = map_int(pmax(f(states,0) - S_star,0), ~ which.min(abs(actions - .x))),
+  msy = map_int(states, ~ which.min(abs(actions - .x * F_MSY))),
+  pgy = map_int(states, ~ which.min(abs(actions - .x * F_PGY))) )
 ```
 
 
