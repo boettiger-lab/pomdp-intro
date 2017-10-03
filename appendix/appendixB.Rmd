@@ -12,8 +12,11 @@ knitr::opts_chunk$set(message=FALSE, comment="")
 ```
   
 ```{r libraries}
+# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
 library(tidyverse)
+library(sarsop)
 library(nimble)
+library(parallel)
 ```
 
 
@@ -61,7 +64,10 @@ df2 <- ramlegacy %>%
 
 ```{r subset}
 stock_ids <- c("PLAICNS", "ARGHAKENARG")
-examples <- df2 %>% filter(stockid %in% stock_ids)
+examples <- df2 %>% 
+  filter(stockid %in% stock_ids) %>% 
+  ungroup() %>% 
+  group_by(commonname)
 ```
 
 
@@ -113,7 +119,7 @@ fit_models <- function(fish, code){
    
   ## Return fit
   data.frame(stockid = fish$stockid[1],
-             species = fish$commonname[1],
+             commonname = fish$commonname[1],
              r = mean(samples$r),
              K = mean(samples$K),
              sigma_g = mean(samples$sigma),
@@ -143,15 +149,12 @@ examples %>% ungroup() %>%
 
 
 ```{r}
-pars <- fits %>% ungroup() %>% select(species, r, K, sigma_g) 
+pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g) 
 ```
 
 
 ```{r}
-# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
-library(sarsop)       # the main POMDP package
-library(tidyverse)    # for munging and plotting
-library(parallel)
+
 options(mc.cores = 6) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_intro"
 ```
@@ -183,10 +186,12 @@ observations <- states
 ## All parameter values combinations for which we want solutions
 
 ```{r}
-meta <- expand.grid(species = pars$species, 
+meta <- expand.grid(commonname = pars$commonname, 
                     sigma_m = c(0, 0.1, 0.2),
                     stringsAsFactors = FALSE) %>%
-  left_join(pars)
+  left_join(pars) %>%
+  mutate(scenario  = as.character(1:length(sigma_m)))
+
 meta
 ```
 
@@ -207,9 +212,12 @@ models <-
                          sigma_m = meta[i,"sigma_m"][[1]],
                          noise = "normal")
                      })
+```
 
-## log metadata associated with each run
 
+
+
+```{r}
 dir.create(log_dir)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
@@ -242,31 +250,99 @@ system.time(
 
 
 
+
+
+
+
+
 ## Comparison to the static models
 
+```{r}
+pars <- examples %>% 
+  group_by(commonname) %>% 
+  summarise(N = max(SSB)) %>% 
+  right_join(pars)
+```
 
 
-```{r eval=FALSE}
-## A generic routine to find stock size (x) which maximizes 
-## growth rate (f(x,0) - x, where x_t+1 = f(x_t))
+<!--- ICK, find a more streamlined way to do this stuff species by species -->
 
-f <- gs(pars[i,"r"][[1]], pars[i, "K"][[1]])
+Convert example data into discrete index space.
 
-S_star <- optimize(function(x) -f(x,0) + x / discount, 
-                   c(0, 2*K))$minimum
+```{r}
+ex <- examples %>%
+  mutate(biomass = index(scaled_biomass, states),          
+         catch = index(scaled_catch, actions))  %>% 
+  select(year, biomass, catch, commonname)
+```
 
-B_MSY <- S_star
-MSY <- f(B_MSY,0) - B_MSY 
+Add corresponding static policy levels on:
 
-F_MSY <- MSY / B_MSY  
-F_PGY = 0.8 * F_MSY
+```{r}
+statics <- function(P){
+  f <- gs(P$r, P$K)
+  S_star <- optimize(function(x) -f(x,0) + x / discount, c(0, 2* P$K))$minimum
+  B_MSY <- S_star
+  MSY <- f(B_MSY,0) - B_MSY
+  
+  tibble(S_star, F_MSY = MSY / B_MSY, F_PGY = 0.8 * F_MSY, 
+         commonname = P$commonname, N = P$N)
+  }
+
+  pars %>% 
+  rowwise() %>% 
+  do(statics(.)) %>% 
+  right_join(ex) %>% 
+  ungroup()  -> ex2
+  
+  ex2
+```
+
+```{r} 
+det_f <- function(S_star, i) 
+  map_int(pmax(f(states,0) - S_star[[1]],0), ~ which.min(abs(actions - .x)))[i]
+msy_f <- function(F_MSY, i) 
+  map_int(states, ~ which.min(abs(actions - .x * F_MSY[[1]])))[i]
+pgy_f <- function(F_PGY, i) 
+  map_int(states, ~ which.min(abs(actions - .x * F_PGY[[1]])))[i]
+
+rescale <- function(x, N) states[x]*N
+
+historical <- ex2 %>% 
+  group_by(commonname) %>% 
+  mutate(det =  det_f(S_star, biomass),
+         msy =  msy_f(F_MSY, biomass),
+         pgy =  pgy_f(F_PGY, biomass)) %>%
+  mutate_if(is.integer, rescale, N=N) %>%
+  select(year, biomass, catch, det, msy, pgy, commonname)
+```
+
+```{r}
+historical %>%
+select(year, commonname, pgy, msy, det) %>%
+gather(model, stock, -year, -commonname) %>%
+  ggplot(aes(year, stock, col=model)) + 
+  geom_line(data = historical, aes(year, biomass), col="grey", lwd=1) +
+  geom_line(data = historical, aes(year, catch), col="black", lwd=1) +
+  geom_line(lwd=1) + facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
+```
+
+
+## POMDP historical
 
 
 
-policies <- list(
-  det = map_int(pmax(f(states,0) - S_star,0), ~ which.min(abs(actions - .x))),
-  msy = map_int(states, ~ which.min(abs(actions - .x * F_MSY))),
-  pgy = map_int(states, ~ which.min(abs(actions - .x * F_PGY))) )
+```{r pomdp_sims}
+## FIXME obs, action is in index space!
+pomdp_sims <- 
+  map2_dfr(models, alphas, function(.x, .y){
+             hindcast_pomdp(.x$transition, .x$observation, .x$reward, discount, 
+                            obs = historical$scaled_biomass, actions = historical$scaled_catch,
+                            state_prior = unif_prior,
+                            alpha = .y)$df %>% 
+              mutate(method = "pomdp") # include a column labeling method
+           },
+           .id = "scenario") %>% left_join(meta)
 ```
 
 
