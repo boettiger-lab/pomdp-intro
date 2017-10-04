@@ -152,7 +152,7 @@ pars <- fits %>% ungroup() %>% select(species, r, K, sigma_g)
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
-options(mc.cores = 6) # Reserve ~ 10 GB per core
+options(mc.cores = 3) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_intro"
 ```
 
