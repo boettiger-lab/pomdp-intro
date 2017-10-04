@@ -2,7 +2,7 @@
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
-options(mc.cores = 3) # Reserve ~ 10 GB per core
+options(mc.cores = 2) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_intro"
 
 r <- 0.75
@@ -60,7 +60,7 @@ system.time(
              models[[i]]$observation,
              models[[i]]$reward,
              discount = discount,
-             precision = 0.00000002,
+             precision = 2e-6,
              timeout = 10000,
              log_dir = log_dir,
              log_data = log_data)
