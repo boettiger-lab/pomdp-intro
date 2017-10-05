@@ -1,0 +1,11 @@
+id,load_time_sec,init_time_sec,run_time_sec,final_precision,end_condition,n_states,n_obs,n_actions,discount,date,model,r,K,sigma_g,sigma_m,noise
+#pomdp_intro,3.72,2.83,10000,0.000483691,  Preset timeout reached,100,100,100,0.99,2017-10-04 04:42:54,gs,0.75,1,0.01,0,normal
+pomdp_intro,3.72,2.83,10000.1,0.000898949,  Preset timeout reached,100,100,100,0.99,2017-10-04 04:45:53,gs,0.75,1,0.05,0,normal
+pomdp_intro,3.72,2.83,10000.1,0.000898949,  Preset timeout reached,100,100,100,0.99,2017-10-04 04:45:53,gs,0.75,1,0.05,0,normal
+pomdp_intro,4.04,680.08,10000,0.0013093,  Preset timeout reached,100,100,100,0.99,2017-10-04 07:35:44,gs,0.75,1,0.1,0,normal
+pomdp_intro,4.04,680.08,10326.8,0.0826385,  Preset timeout reached,100,100,100,0.99,2017-10-04 07:46:10,gs,0.75,1,0.01,0.1,normal
+pomdp_intro,4.04,680.08,10326.8,0.0826385,  Preset timeout reached,100,100,100,0.99,2017-10-04 07:46:10,gs,0.75,1,0.01,0.1,normal
+pomdp_intro,4.83,4054.92,10045.2,0.275836,  Preset timeout reached,100,100,100,0.99,2017-10-04 10:34:46,gs,0.75,1,0.05,0.1,normal
+pomdp_intro,5.26,682.48,10158.2,0.277583,  Preset timeout reached,100,100,100,0.99,2017-10-04 13:32:26,gs,0.75,1,0.01,0.2,normal
+pomdp_intro,5.26,682.48,10158.2,0.277583,  Preset timeout reached,100,100,100,0.99,2017-10-04 13:32:26,gs,0.75,1,0.01,0.2,normal
+pomdp_intro,4.75,4079.76,11294.9,2.28968,  Preset timeout reached,100,100,100,0.99,2017-10-04 16:50:59,gs,0.75,1,0.1,0.2,normal
