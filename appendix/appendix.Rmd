@@ -221,7 +221,9 @@ system.time(
 We can read the stored solution from the log:
 
 ```{r}
-#alphas <- alphas_from_log(meta, log_dir)
+log_dir <- "../pomdp_intro"
+meta <- meta_from_log("pomdp_intro", log_dir)
+alphas <- alphas_from_log(meta, log_dir)
 ```
 
 
@@ -246,6 +248,7 @@ static_sims <-
 
 ```{r pomdp_sims}
 # slower!
+unif_prior <- rep(1, length(states)) / length(states)
 pomdp_sims <- 
   map2_dfr(models, alphas, function(.x, .y){
              sim_pomdp(.x$transition, .x$observation, .x$reward, discount, 
