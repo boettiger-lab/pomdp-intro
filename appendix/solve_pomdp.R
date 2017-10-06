@@ -12,7 +12,7 @@ f <- function(x, h){
   x + x * r * (1 - x / K) - pmin(x,h)
 }
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 1
+discount <- 0.99
 
 ## Discretize space
 states <- seq(0,2, length=100)
