@@ -265,16 +265,6 @@ pars <- examples %>%
 ```
 
 
-<!--- ICK, find a more streamlined way to do this stuff species by species -->
-
-Convert example data into discrete index space.
-
-```{r}
-ex <- examples %>%
-  mutate(biomass = index(scaled_biomass, states),          
-         catch = index(scaled_catch, actions))  %>% 
-  select(year, biomass, catch, commonname)
-```
 
 Add corresponding static policy levels on:
 
@@ -287,15 +277,22 @@ statics <- function(P){
   
   tibble(S_star, F_MSY = MSY / B_MSY, F_PGY = 0.8 * F_MSY, 
          commonname = P$commonname, N = P$N)
-  }
+}
 
+policy_pars <- 
   pars %>% 
   rowwise() %>% 
-  do(statics(.)) %>% 
-  right_join(ex) %>% 
-  ungroup()  -> ex2
+  do(statics(.))
+```  
+  Convert example data into discrete index space.
+
+```{r}
+ex <- examples %>%
+  mutate(biomass = index(scaled_biomass, states),          
+         catch = index(scaled_catch, actions))  %>% 
+  left_join(policy_pars) %>% 
+  ungroup() 
   
-  ex2
 ```
 
 ```{r} 
@@ -308,7 +305,7 @@ pgy_f <- function(F_PGY, i)
 
 rescale <- function(x, N) states[x]*N
 
-historical <- ex2 %>% 
+historical <- ex %>% 
   group_by(commonname) %>% 
   mutate(det =  det_f(S_star, biomass),
          msy =  msy_f(F_MSY, biomass),
@@ -316,6 +313,10 @@ historical <- ex2 %>%
   mutate_if(is.integer, rescale, N=N) %>%
   select(year, biomass, catch, det, msy, pgy, commonname)
 ```
+
+
+
+Plot
 
 ```{r}
 historical %>%
@@ -326,6 +327,10 @@ gather(model, stock, -year, -commonname) %>%
   geom_line(data = historical, aes(year, catch), col="black", lwd=1) +
   geom_line(lwd=1) + facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
+
+
+
+
 
 
 ## POMDP historical
