@@ -158,7 +158,7 @@ pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g)
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
-options(mc.cores = 3) # Reserve ~ 10 GB per core
+options(mc.cores = 4) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_historical"
 ```
 
@@ -228,8 +228,7 @@ system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
     function(i){
-      log_data <- data.frame(id = "pomdp_historical", 
-                             model = "gs", 
+      log_data <- data.frame(model = "gs", 
                              r = meta[i, "r"][[1]], 
                              K = meta[i, "K"][[1]], 
                              sigma_g = meta[i,"sigma_g"][[1]], 
@@ -250,12 +249,6 @@ system.time(
 
 
 ```
-
-
-
-
-
-
 
 
 ## Comparison to the static models

@@ -187,18 +187,16 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 
 Because this solution is computationally somewhat intensive, we provide 
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 log_dir <- "appendix_alphas" # Store the computed solution files here
 dir.create(log_dir)
-id = "pomdp_intro"    # an optional id for these runs
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
 system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
     function(i){
-      log_data <- data.frame(id = id, 
-                             model = "gs", 
+      log_data <- data.frame(model = "gs", 
                              r = r, 
                              K = K, 
                              sigma_g = meta[i,"sigma_g"][[1]], 
@@ -221,8 +219,7 @@ system.time(
 We can read the stored solution from the log:
 
 ```{r}
-log_dir <- "../pomdp_intro"
-meta <- meta_from_log("pomdp_intro", log_dir)
+meta <- meta_from_log(data.frame(model="gs"), log_dir)
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
