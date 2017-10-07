@@ -222,7 +222,7 @@ We can read the stored solution from the log:
 
 ```{r}
 log_dir <- "../pomdp_intro"
-meta <- meta_from_log("pomdp_intro", log_dir)
+meta <- meta_from_log("pomdp_intro", log_dir) %>% mutate(scenario=as.character(1:length(models)))
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
@@ -276,7 +276,7 @@ write_csv(sims, "sims.csv")
 We the results varying over different noise intensities, sigma_g, and sigma_m.  Figure 1 of the main text considers the case of sigma_g = 0.05, sigma_m = 0.1
 
 ```{r}
-sims %>%
+pomdp_sims %>%
   select(time, state, rep, method, sigma_m, sigma_g) %>%
   group_by(time, method, sigma_m, sigma_g) %>%
   summarise(mean = mean(state), sd = sd(state)) %>%
