@@ -2,7 +2,7 @@
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
-options(mc.cores = 2) # Reserve ~ 10 GB per core
+options(mc.cores = 4) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_intro"
 
 r <- 0.75
@@ -48,8 +48,7 @@ system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
     function(i){
-      log_data <- data.frame(id = "pomdp_intro", 
-                             model = "gs", 
+      log_data <- data.frame(model = "gs", 
                              r = r, 
                              K = K, 
                              sigma_g = meta[i,"sigma_g"][[1]], 

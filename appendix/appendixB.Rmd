@@ -7,7 +7,7 @@ Computes model parameter estimates on each `stockid` in RAM (after normalizing d
 - Currently parameter estimates are just MLE. Should do Bayesian version (slower of course, and tricky to summarize; maybe just as sds around estimates.)
 
 ```{r aethetics, include=FALSE}
-library(printr)
+#library(printr)
 knitr::opts_chunk$set(message=FALSE, comment="")
 ```
   
@@ -154,9 +154,12 @@ pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g)
 
 
 ```{r}
-
-options(mc.cores = 6) # Reserve ~ 10 GB per core
-log_dir <- "pomdp_intro"
+# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
+library(sarsop)       # the main POMDP package
+library(tidyverse)    # for munging and plotting
+library(parallel)
+options(mc.cores = 4) # Reserve ~ 10 GB per core
+log_dir <- "pomdp_historical"
 ```
 
 
@@ -168,7 +171,7 @@ gs <- function(r,K){
   }
 }
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 1
+discount <- .99
 ```
 
 
@@ -225,8 +228,7 @@ system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
     function(i){
-      log_data <- data.frame(id = "pomdp_historical", 
-                             model = "gs", 
+      log_data <- data.frame(model = "gs", 
                              r = meta[i, "r"][[1]], 
                              K = meta[i, "K"][[1]], 
                              sigma_g = meta[i,"sigma_g"][[1]], 
@@ -237,7 +239,7 @@ system.time(
              models[[i]]$observation,
              models[[i]]$reward,
              discount = discount,
-             precision = 0.00000002,
+             precision = 2e-6,
              timeout = 20000,
              log_dir = log_dir,
              log_data = log_data)
@@ -247,12 +249,6 @@ system.time(
 
 
 ```
-
-
-
-
-
-
 
 
 ## Comparison to the static models
@@ -265,16 +261,6 @@ pars <- examples %>%
 ```
 
 
-<!--- ICK, find a more streamlined way to do this stuff species by species -->
-
-Convert example data into discrete index space.
-
-```{r}
-ex <- examples %>%
-  mutate(biomass = index(scaled_biomass, states),          
-         catch = index(scaled_catch, actions))  %>% 
-  select(year, biomass, catch, commonname)
-```
 
 Add corresponding static policy levels on:
 
@@ -287,15 +273,22 @@ statics <- function(P){
   
   tibble(S_star, F_MSY = MSY / B_MSY, F_PGY = 0.8 * F_MSY, 
          commonname = P$commonname, N = P$N)
-  }
+}
 
+policy_pars <- 
   pars %>% 
   rowwise() %>% 
-  do(statics(.)) %>% 
-  right_join(ex) %>% 
-  ungroup()  -> ex2
+  do(statics(.))
+```  
+  Convert example data into discrete index space.
+
+```{r}
+ex <- examples %>%
+  mutate(biomass = index(scaled_biomass, states),          
+         catch = index(scaled_catch, actions))  %>% 
+  left_join(policy_pars) %>% 
+  ungroup() 
   
-  ex2
 ```
 
 ```{r} 
@@ -308,7 +301,7 @@ pgy_f <- function(F_PGY, i)
 
 rescale <- function(x, N) states[x]*N
 
-historical <- ex2 %>% 
+historical <- ex %>% 
   group_by(commonname) %>% 
   mutate(det =  det_f(S_star, biomass),
          msy =  msy_f(F_MSY, biomass),
@@ -316,6 +309,10 @@ historical <- ex2 %>%
   mutate_if(is.integer, rescale, N=N) %>%
   select(year, biomass, catch, det, msy, pgy, commonname)
 ```
+
+
+
+Plot
 
 ```{r}
 historical %>%
@@ -326,6 +323,10 @@ gather(model, stock, -year, -commonname) %>%
   geom_line(data = historical, aes(year, catch), col="black", lwd=1) +
   geom_line(lwd=1) + facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
+
+
+
+
 
 
 ## POMDP historical
