@@ -8,7 +8,7 @@ Computes model parameter estimates on each `stockid` in RAM (after normalizing d
 
 ```{r aethetics, include=FALSE}
 #library(printr)
-knitr::opts_chunk$set(message=FALSE, comment="")
+knitr::opts_chunk$set(message=FALSE, comment="", cache=TRUE)
 ```
   
 ```{r libraries}
@@ -133,6 +133,7 @@ fit_models <- function(fish, code){
 
 
 ```{r}
+set.seed(123)
 fits <- examples %>% do(fit_models(., code=gs_code))
 fits 
 ```
@@ -220,7 +221,7 @@ models <-
 
 
 
-```{r}
+```{r eval=FALSE}
 dir.create(log_dir)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
@@ -233,7 +234,8 @@ system.time(
                              K = meta[i, "K"][[1]], 
                              sigma_g = meta[i,"sigma_g"][[1]], 
                              sigma_m = meta[i,"sigma_m"][[1]], 
-                             noise = "normal")
+                             noise = "normal",
+                             commonname = meta[i, "commonname"][[1]])
       
       sarsop(models[[i]]$transition,
              models[[i]]$observation,
@@ -251,13 +253,24 @@ system.time(
 ```
 
 
+
+```{r}
+meta <- meta_from_log(data.frame(model="gs"), log_dir) %>%
+  mutate(scenario  = as.character(1:length(sigma_m)))
+alphas <- alphas_from_log(meta, log_dir)
+#models <- models_from_log(meta)
+```
+
+
+
+
 ## Comparison to the static models
 
 ```{r}
 pars <- examples %>% 
   group_by(commonname) %>% 
   summarise(N = max(SSB)) %>% 
-  right_join(pars)
+  right_join(meta)
 ```
 
 
@@ -283,21 +296,20 @@ policy_pars <-
   Convert example data into discrete index space.
 
 ```{r}
+index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
+
 ex <- examples %>%
   mutate(biomass = index(scaled_biomass, states),          
          catch = index(scaled_catch, actions))  %>% 
   left_join(policy_pars) %>% 
   ungroup() 
-  
+ex
 ```
 
 ```{r} 
-det_f <- function(S_star, i) 
-  map_int(pmax(f(states,0) - S_star[[1]],0), ~ which.min(abs(actions - .x)))[i]
-msy_f <- function(F_MSY, i) 
-  map_int(states, ~ which.min(abs(actions - .x * F_MSY[[1]])))[i]
-pgy_f <- function(F_PGY, i) 
-  map_int(states, ~ which.min(abs(actions - .x * F_PGY[[1]])))[i]
+det_f <- function(S_star, i) index(pmax(f(states,0) - S_star[[1]],0), actions)[i]
+msy_f <- function(F_MSY, i) index(states * F_MSY[[1]], actions)[i]
+pgy_f <- function(F_PGY, i) index(states * F_PGY[[1]], actions)[i]
 
 rescale <- function(x, N) states[x]*N
 
@@ -306,8 +318,10 @@ historical <- ex %>%
   mutate(det =  det_f(S_star, biomass),
          msy =  msy_f(F_MSY, biomass),
          pgy =  pgy_f(F_PGY, biomass)) %>%
-  mutate_if(is.integer, rescale, N=N) %>%
-  select(year, biomass, catch, det, msy, pgy, commonname)
+  select(year, biomass, catch, det, msy, pgy, commonname, N) %>%
+  gather(model, stock, -year, -commonname, -N) %>%
+  mutate(stock = states[stock] * N) %>% 
+  select(-N)
 ```
 
 
@@ -316,12 +330,10 @@ Plot
 
 ```{r}
 historical %>%
-select(year, commonname, pgy, msy, det) %>%
-gather(model, stock, -year, -commonname) %>%
-  ggplot(aes(year, stock, col=model)) + 
-  geom_line(data = historical, aes(year, biomass), col="grey", lwd=1) +
-  geom_line(data = historical, aes(year, catch), col="black", lwd=1) +
-  geom_line(lwd=1) + facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
+  ggplot(aes(year, stock, col=model)) +
+  geom_line(lwd=1) +
+  scale_color_manual(values = c("black", "grey", "#D9661F", "#00B0DA", "#CFDD45")) +
+  facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
 
@@ -333,17 +345,32 @@ gather(model, stock, -year, -commonname) %>%
 
 
 
-```{r pomdp_sims}
-## FIXME obs, action is in index space!
-pomdp_sims <- 
-  map2_dfr(models, alphas, function(.x, .y){
+
+```{r}
+  pomdp_sims <- 
+  pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
+           function(.x, .y, .z){
+             
+             who <- ex$commonname == meta[.z,"commonname"]
+             df <- ex[who,]
+             
              hindcast_pomdp(.x$transition, .x$observation, .x$reward, discount, 
-                            obs = historical$scaled_biomass, actions = historical$scaled_catch,
-                            state_prior = unif_prior,
+                            obs = index(df$scaled_biomass, states), 
+                            action = index(df$scaled_catch,states),
                             alpha = .y)$df %>% 
               mutate(method = "pomdp") # include a column labeling method
            },
            .id = "scenario") %>% left_join(meta)
 ```
+```{r}
+rescale <- function(x) states[x]
 
+pomdp_sims %>% 
+  select(time, obs, action, optimal, commonname, sigma_m) %>%
+  mutate_at(c("action", "optimal"), rescale) %>%
+  ggplot(aes(time, optimal, col=as.character(sigma_m))) + 
+  geom_line() + 
+  geom_line(aes(time, action), col="black") +
+  facet_wrap(~commonname, scales="free") 
+```
 
