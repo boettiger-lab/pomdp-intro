@@ -270,7 +270,10 @@ alphas <- alphas_from_log(meta, log_dir)
 pars <- examples %>% 
   group_by(commonname) %>% 
   summarise(N = max(SSB)) %>% 
-  right_join(meta)
+  right_join(
+    meta %>% 
+      select(commonname, r, K) %>% 
+      distinct())
 ```
 
 
@@ -297,7 +300,7 @@ policy_pars <-
 
 ```{r}
 index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
-
+## repeats each series for each static model
 ex <- examples %>%
   mutate(biomass = index(scaled_biomass, states),          
          catch = index(scaled_catch, actions))  %>% 
@@ -326,7 +329,7 @@ historical <- ex %>%
 
 
 
-Plot
+## Plots
 
 ```{r}
 historical %>%
@@ -338,39 +341,61 @@ historical %>%
 
 
 
-
-
-
 ## POMDP historical
 
 
-
-
 ```{r}
-  pomdp_sims <- 
+pomdp_sims <- 
   pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
            function(.x, .y, .z){
              
-             who <- ex$commonname == meta[.z,"commonname"]
+             ## FIXME need to get obs for unique commmonname, wrong length?
+             who <- (ex$commonname == meta[.z,"commonname"]) 
              df <- ex[who,]
              
              hindcast_pomdp(.x$transition, .x$observation, .x$reward, discount, 
                             obs = index(df$scaled_biomass, states), 
                             action = index(df$scaled_catch,states),
                             alpha = .y)$df %>% 
-              mutate(method = "pomdp") # include a column labeling method
+              mutate(method = "pomdp") %>% # include a column labeling method
+              mutate(year = ex[who, "year"][[1]]) 
            },
-           .id = "scenario") %>% left_join(meta)
+           .id = "scenario") 
 ```
+
+
+
 ```{r}
-rescale <- function(x) states[x]
+pomdp_sims <- 
+  meta %>% 
+  select(scenario, commonname,sigma_m) %>% 
+  left_join(pars) %>%
+  right_join(pomdp_sims)
 
-pomdp_sims %>% 
-  select(time, obs, action, optimal, commonname, sigma_m) %>%
-  mutate_at(c("action", "optimal"), rescale) %>%
-  ggplot(aes(time, optimal, col=as.character(sigma_m))) + 
-  geom_line() + 
-  geom_line(aes(time, action), col="black") +
-  facet_wrap(~commonname, scales="free") 
 ```
 
+
+
+```{r}
+sims <- pomdp_sims %>% 
+  mutate(optimal = states[optimal] * N) %>% # original scale
+  select(year, optimal, commonname, sigma_m) %>%
+  rename(stock = optimal) %>% 
+  ## treat each sigma_m value as separate 'model'
+  mutate(sigma_m = as.factor(sigma_m)) %>%
+  mutate(model = recode(sigma_m, 
+                        "0" = "reed",
+                        "0.1" = "pomdp_0.1", 
+                        "0.2" = "pomdp_0.2")) %>%
+  select(-sigma_m) %>%
+  bind_rows(historical)
+```
+
+```{r}
+sims %>%
+  filter(model %in% c("biomass", "catch", "pomdp_0.2", "reed", "pgy")) %>%
+  ggplot(aes(year, stock, col=model)) +
+  geom_line(lwd=1) +
+  scale_color_manual(values = c("black", "grey", "#D9661F", "#FDB515", "#6C3302", "#00B0DA", "#CFDD45", "#3B7EA1")) +
+  facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
+```
