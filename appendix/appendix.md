@@ -1,13 +1,17 @@
 POMDP comparisons across sigma\_m, sigma\_g
 ================
 Carl Boettiger
-2017-10-01
+2017-10-10
 
 ``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
+```
+
+``` r
+options(mc.cores=9)
 ```
 
 Basic deterministic model
@@ -27,7 +31,7 @@ Utility (reward) function:
 
 ``` r
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 1
+discount <- 0.99
 ```
 
 Calculating MSY
@@ -45,89 +49,50 @@ S_star <- optimize(function(x) -f(x,0) + x / discount,
 ``` r
 B_MSY <- S_star
 MSY <- f(B_MSY,0) - B_MSY 
-F_MSY <- MSY / B_MSY  
 
+F_MSY <- MSY / B_MSY  
 F_PGY = 0.8 * F_MSY
 ```
 
-### Optional checks:
-
 ``` r
-## Make sure these match the known analytic solutions for Graham-Schaefer model:
-testthat::expect_equal(B_MSY, K / 2)
-testthat::expect_equal(MSY, r * K / 4)
-testthat::expect_equal(F_MSY, r / 2)
+## Make sure these match the known analytic solutions for Graham-Schaefer model (only true of discount = 1)
+if(discount == 1){
+  testthat::expect_equal(B_MSY, K / 2)
+  testthat::expect_equal(MSY, r * K / 4)
+  testthat::expect_equal(F_MSY, r / 2)
+}
 ```
 
 As a basic reference point, simulate these three policies in a purely deterministic world. Unlike later simulations, here we consider all states an actions exactly (that is, within floating point precision). Later, states and actions are limited to a discrete set, so solutions can depend on resolution and extent of that discretization.
 
-We first define functions that correspond to each policy:
-
 ``` r
-msy_policy <- function(x) F_MSY * x
-pgy_policy <- function(x) F_PGY * x
-
-escapement_policy <- function(x){  ## ASSUMES harvest takes place *after* recruitment
-  if(f(x,0) > B_MSY)
-    f(x,0) - B_MSY
-  else
-    0
-}
-```
-
-``` r
-# inits
-x0 <- K/6
-Tmax = 20
-
-# a simulation function
-det_sim <- function(policy, f, x0, Tmax){
-    action <- state <- obs <- as.numeric(rep(NA,Tmax))
-    state[1] <- x0
-    for(t in 1:(Tmax-1)){
-      action[t] <- policy(state[t])
-      obs[t] <- state[t] - action[t]  # if we observe after harvest but before recruitment
-      state[t+1] <- f(state[t], action[t]) 
-    }
-    data.frame(time = 1:Tmax, state, action, obs)
-  }
-
-# simulate each policy, returning all results in a single unified data frame 
-sims <- 
-  list(msy = msy_policy, 
-       det = escapement_policy, 
-       pgy = pgy_policy) %>% 
-  map_df(det_sim, 
-         f, x0, Tmax, 
-         .id = "method") 
-```
-
-``` r
-# plot simulation results 
-sims %>%
+det_simulations(x0 = 1/6, Tmax = 20, B_MSY, F_MSY, F_PGY) %>%
   ggplot(aes(time, state, col=method)) + 
   geom_line() + 
   geom_hline(aes(yintercept=B_MSY), lwd=1) 
 ```
 
-![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-10-1.png)
+![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
 
 ------------------------------------------------------------------------
 
 Introduce a discrete grid
 -------------------------
 
+``` r
+## Discretize space
+states <- seq(0,2, length=100)
+actions <- states
+observations <- states
+```
+
 We compute the above policies on this grid for later comparison.
 
 ``` r
-states <- seq(0,2, length=100)
-actions <- states
-
-## Harvest after recruitment
-det_policy <- sapply(states, function(x) pmax(f(x,0) - S_star,0))
-det_action <- sapply(det_policy, function(x) which.min(abs(actions - x)))
-msy_action <- sapply(states, function(x) which.min(abs(actions - x * F_MSY)))
-pgy_action <- sapply(states, function(x) which.min(abs(actions - x * F_PGY)))
+policies <- list(
+  det = map_int(pmax(f(states,0) - S_star,0), ~ which.min(abs(actions - .x))),
+  msy = map_int(states, ~ which.min(abs(actions - .x * F_MSY))),
+  pgy = map_int(states, ~ which.min(abs(actions - .x * F_PGY))) )
 ```
 
 POMDP Model
@@ -136,13 +101,13 @@ POMDP Model
 We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values:
 
 ``` r
-observations <- states # same discretization, for convenience
-
-
 meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.2), 
                     sigma_m = c(0, 0.1, 0.2),
-                    stringsAsFactors = FALSE)
+                    stringsAsFactors = FALSE) %>%
+        mutate(scenario  = as.character(1:length(sigma_m)))
+```
 
+``` r
 models <- 
   parallel::mclapply(1:dim(meta)[1], 
            function(i){
@@ -158,46 +123,105 @@ models <-
 })
 ```
 
+POMDP solution
+--------------
+
+The POMDP solution is represented by a collection of alpha-vectors and values, returned in a `*.policyx` file. Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
+
+Because this solution is computationally somewhat intensive, we provide
+
+``` r
+log_dir <- "appendix_alphas" # Store the computed solution files here
+dir.create(log_dir)
+```
+
+    Warning in dir.create(log_dir): 'appendix_alphas' already exists
+
+``` r
+## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
+system.time(
+  alphas <- 
+    parallel::mclapply(1:length(models), 
+    function(i){
+      log_data <- data.frame(model = "gs", 
+                             r = r, 
+                             K = K, 
+                             sigma_g = meta[i,"sigma_g"][[1]], 
+                             sigma_m = meta[i,"sigma_m"][[1]], 
+                             noise = "normal")
+      
+      sarsop(models[[i]]$transition,
+             models[[i]]$observation,
+             models[[i]]$reward,
+             discount = discount,
+             precision = 0.00000002,
+             timeout = 10000,
+             log_dir = log_dir,
+             log_data = log_data)
+    })
+)
+```
+
+         user    system   elapsed 
+    85800.036    66.185 10993.378 
+
+We can read the stored solution from the log:
+
+``` r
+meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% mutate(scenario=as.character(1:length(models)))
+alphas <- alphas_from_log(meta, log_dir)
+```
+
 Simulating the static policies under uncertainty
 ------------------------------------------------
 
 ``` r
-# inits
-x0 <- which.min(abs(states - K/6))
 Tmax <- 100
+x0 <- which.min(abs(K/6 - states))
 reps <- 100
-options(mc.cores = parallel::detectCores())
 
-static_sims <-
-  map_dfr(models, 
-          function(m){
-            do_policy_sim <- function(policy){
-              sim <- sim_pomdp(m$transition, m$observation, m$reward, discount, 
-                               x0 = x0, Tmax = Tmax, policy = policy, reps = reps)
-              sim$df %>% 
-                mutate(state = states[state], action = actions[action])
-            }
-            
-            list(msy = msy_action, 
-                 det = det_action, 
-                 pgy = pgy_action) %>% 
-              map_df(do_policy_sim, .id = "method")
-          },
-          .id = "scenario") 
+static_sims <- 
+ map_dfr(models, function(m){
+            do_sim <- function(policy) sim_pomdp(
+                        m$transition, m$observation, m$reward, discount, 
+                        x0 = x0, Tmax = Tmax, policy = policy, reps = reps)$df
+            map_dfr(policies, do_sim, .id = "method")
+          }, .id = "scenario") 
 ```
 
-``` r
-# add parameter metadata to the output data.frame to track which simulation had which parameters
-meta_simple <-  
-  meta %>% 
-  select(sigma_m, sigma_g) %>%
-  mutate(scenario  = as.character(1:dim(meta)[1]))
-static_sims <- right_join(meta_simple, static_sims)
-```
+Simulating the POMDP policies under uncertiainty
+------------------------------------------------
 
 ``` r
-# plot
-static_sims %>%
+# slower!
+unif_prior <- rep(1, length(states)) / length(states)
+pomdp_sims <- 
+  map2_dfr(models, alphas, function(.x, .y){
+             sim_pomdp(.x$transition, .x$observation, .x$reward, discount, 
+                       unif_prior, x0 = x0, Tmax = Tmax, alpha = .y,
+                       reps=reps)$df %>% 
+              mutate(method = "pomdp") # include a column labeling method
+           },
+           .id = "scenario") %>% left_join(meta)
+```
+
+Combine the resulting data frames
+
+``` r
+sims <- bind_rows(static_sims, pomdp_sims) %>%
+    left_join(meta) %>%    ## combine output with scenarios
+    mutate(state = states[state], action = actions[action]) # index -> value
+
+write_csv(sims, "sims.csv")
+```
+
+Figure S1
+---------
+
+We the results varying over different noise intensities, sigma\_g, and sigma\_m. Figure 1 of the main text considers the case of sigma\_g = 0.05, sigma\_m = 0.1
+
+``` r
+pomdp_sims %>%
   select(time, state, rep, method, sigma_m, sigma_g) %>%
   group_by(time, method, sigma_m, sigma_g) %>%
   summarise(mean = mean(state), sd = sd(state)) %>%
@@ -208,3 +232,15 @@ static_sims %>%
 ```
 
 ![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-15-1.png)
+
+Policy plots
+------------
+
+Historical data estimation
+--------------------------
+
+Historical data POMDP & other solutions
+---------------------------------------
+
+Historical combined plot
+------------------------
