@@ -108,14 +108,14 @@ F_MSY <- MSY / B_MSY
 F_PGY = 0.8 * F_MSY
 ```
 
-### Optional checks:
 
-
-```{r}
-## Make sure these match the known analytic solutions for Graham-Schaefer model:
-testthat::expect_equal(B_MSY, K / 2)
-testthat::expect_equal(MSY, r * K / 4)
-testthat::expect_equal(F_MSY, r / 2)
+```{r optional_checks}
+## Make sure these match the known analytic solutions for Graham-Schaefer model (only true of discount = 1)
+if(discount == 1){
+  testthat::expect_equal(B_MSY, K / 2)
+  testthat::expect_equal(MSY, r * K / 4)
+  testthat::expect_equal(F_MSY, r / 2)
+}
 ```
 
 
