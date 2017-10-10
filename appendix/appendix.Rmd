@@ -61,7 +61,9 @@ library(tidyverse)    # for munging and plotting
 library(parallel)
 ```
 
-
+```{r}
+options(mc.cores=9)
+```
 
 
 
@@ -81,7 +83,7 @@ Utility (reward) function:
 
 ```{r}
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 1
+discount <- 0.99
 ```
 
 
