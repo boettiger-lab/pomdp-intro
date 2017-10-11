@@ -349,7 +349,7 @@ pomdp_sims <-
   pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
            function(.x, .y, .z){
              
-             ## FIXME need to get obs for unique commmonname, wrong length?
+             ## avoid NSE
              who <- (ex$commonname == meta[.z,"commonname"]) 
              df <- ex[who,]
              
@@ -393,9 +393,9 @@ sims <- pomdp_sims %>%
 
 ```{r}
 sims %>%
-  filter(model %in% c("biomass", "catch", "pomdp_0.2", "reed", "pgy")) %>%
+  filter(model %in% c("biomass", "catch", "pomdp_0.1", "reed", "pgy")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", "#D9661F", "#FDB515", "#6C3302", "#00B0DA", "#CFDD45", "#3B7EA1")) +
+  scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
