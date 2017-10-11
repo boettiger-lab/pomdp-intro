@@ -2,9 +2,9 @@
 output: github_document
 ---
 
-Computes model parameter estimates on each `stockid` in RAM (after normalizing data) using nimble. Then, estimate common stock measurement (Bmsy, MSY, PGY).
+# Section 1: Model estimates from data
 
-- Currently parameter estimates are just MLE. Should do Bayesian version (slower of course, and tricky to summarize; maybe just as sds around estimates.)
+Computes model parameter estimates on each `stockid` in RAM (after normalizing data) using nimble. Then, estimate common stock measurement (Bmsy, MSY, PGY).
 
 ```{r aethetics, include=FALSE}
 #library(printr)
@@ -138,7 +138,8 @@ fits <- examples %>% do(fit_models(., code=gs_code))
 fits 
 ```
 
-Do the estimates make sense?
+<!--
+Do the estimates make sense?  Consider simulation from models, under this historical harvests, compared to historical trajectories
 
 ```{r}
 examples %>% ungroup() %>%
@@ -149,16 +150,21 @@ examples %>% ungroup() %>%
 ```
 
 
+-->
+
 ```{r}
 pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g) 
+pars
 ```
 
 
+
+-------
+
+# Decision Policies
+
+
 ```{r}
-# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
-library(sarsop)       # the main POMDP package
-library(tidyverse)    # for munging and plotting
-library(parallel)
 options(mc.cores = 4) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_historical"
 ```
@@ -235,7 +241,8 @@ system.time(
                              sigma_g = meta[i,"sigma_g"][[1]], 
                              sigma_m = meta[i,"sigma_m"][[1]], 
                              noise = "normal",
-                             commonname = meta[i, "commonname"][[1]])
+                             commonname = meta[i, "commonname"][[1]],
+                             scenario = meta[i, "scenario"][[1]])
       
       sarsop(models[[i]]$transition,
              models[[i]]$observation,
@@ -255,8 +262,11 @@ system.time(
 
 
 ```{r}
-meta <- meta_from_log(data.frame(model="gs"), log_dir) %>%
-  mutate(scenario  = as.character(1:length(sigma_m)))
+meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
+  left_join(
+    select(meta, sigma_m, commonname, scenario), 
+    by = c("sigma_m", "commonname")) %>% 
+  arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 #models <- models_from_log(meta)
 ```
