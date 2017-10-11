@@ -1,7 +1,7 @@
 POMDP comparisons across sigma\_m, sigma\_g
 ================
 Carl Boettiger
-2017-10-10
+2017-10-11
 
 ``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
@@ -105,7 +105,20 @@ meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.2),
                     sigma_m = c(0, 0.1, 0.2),
                     stringsAsFactors = FALSE) %>%
         mutate(scenario  = as.character(1:length(sigma_m)))
+log_dir <- "appendix_alphas" # Store the computed solution files here
+meta
 ```
+
+      sigma_g sigma_m scenario
+    1    0.02     0.0        1
+    2    0.10     0.0        2
+    3    0.20     0.0        3
+    4    0.02     0.1        4
+    5    0.10     0.1        5
+    6    0.20     0.1        6
+    7    0.02     0.2        7
+    8    0.10     0.2        8
+    9    0.20     0.2        9
 
 ``` r
 models <- 
@@ -131,13 +144,8 @@ The POMDP solution is represented by a collection of alpha-vectors and values, r
 Because this solution is computationally somewhat intensive, we provide
 
 ``` r
-log_dir <- "appendix_alphas" # Store the computed solution files here
 dir.create(log_dir)
-```
 
-    Warning in dir.create(log_dir): 'appendix_alphas' already exists
-
-``` r
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
 system.time(
   alphas <- 
@@ -148,7 +156,8 @@ system.time(
                              K = K, 
                              sigma_g = meta[i,"sigma_g"][[1]], 
                              sigma_m = meta[i,"sigma_m"][[1]], 
-                             noise = "normal")
+                             noise = "normal",
+                             scenario = meta[i, "scenario"][[1]])
       
       sarsop(models[[i]]$transition,
              models[[i]]$observation,
@@ -162,13 +171,10 @@ system.time(
 )
 ```
 
-         user    system   elapsed 
-    85800.036    66.185 10993.378 
-
 We can read the stored solution from the log:
 
 ``` r
-meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% mutate(scenario=as.character(1:length(models)))
+meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% left_join(meta) %>% arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
@@ -199,10 +205,10 @@ pomdp_sims <-
   map2_dfr(models, alphas, function(.x, .y){
              sim_pomdp(.x$transition, .x$observation, .x$reward, discount, 
                        unif_prior, x0 = x0, Tmax = Tmax, alpha = .y,
-                       reps=reps)$df %>% 
+                       reps = reps)$df %>% 
               mutate(method = "pomdp") # include a column labeling method
            },
-           .id = "scenario") %>% left_join(meta)
+           .id = "scenario")
 ```
 
 Combine the resulting data frames
@@ -221,7 +227,7 @@ Figure S1
 We the results varying over different noise intensities, sigma\_g, and sigma\_m. Figure 1 of the main text considers the case of sigma\_g = 0.05, sigma\_m = 0.1
 
 ``` r
-pomdp_sims %>%
+sims %>%
   select(time, state, rep, method, sigma_m, sigma_g) %>%
   group_by(time, method, sigma_m, sigma_g) %>%
   summarise(mean = mean(state), sd = sd(state)) %>%
