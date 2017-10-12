@@ -1,17 +1,10 @@
----
-output: github_document
----
 
-# Section 1: Model estimates from data
+Section 1: Model estimates from data
+====================================
 
 Computes model parameter estimates on each `stockid` in RAM (after normalizing data) using nimble. Then, estimate common stock measurement (Bmsy, MSY, PGY).
 
-```{r aethetics, include=FALSE}
-#library(printr)
-knitr::opts_chunk$set(message=FALSE, comment="", cache=TRUE)
-```
-  
-```{r libraries}
+``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
 library(tidyverse)
 library(sarsop)
@@ -19,14 +12,12 @@ library(nimble)
 library(parallel)
 ```
 
-
-
-```{r}
+``` r
 download.file("https://depts.washington.edu/ramlegac/wordpress/databaseVersions/RLSADB_v3.0_(assessment_data_only)_excel.zip",
               "ramlegacy.zip")
 ```
 
-```{r}
+``` r
 path <- unzip("ramlegacy.zip")
 sheets <- readxl::excel_sheets(path)
 ram <- lapply(sheets, readxl::read_excel, path = path)
@@ -48,10 +39,9 @@ ramlegacy <-
          SSB, TC, SSB_units, TC_units)
 ```
 
-
 Let's filter out missing data, non-matching units, and obvious reporting errors (catch exceeding total spawning biomass), then we rescale each series into the 0,1 by appropriate choice of units:
 
-```{r}
+``` r
 df2 <- ramlegacy %>% 
   filter(!is.na(SSB), !is.na(TC)) %>%
   filter(SSB_units == "MT", TC_units=="MT") %>% 
@@ -62,7 +52,7 @@ df2 <- ramlegacy %>%
          scaled_biomass = SSB / max(SSB)) 
 ```
 
-```{r subset}
+``` r
 stock_ids <- c("PLAICNS", "ARGHAKENARG")
 examples <- df2 %>% 
   filter(stockid %in% stock_ids) %>% 
@@ -70,9 +60,7 @@ examples <- df2 %>%
   group_by(commonname)
 ```
 
-
-
-```{r}
+``` r
 ## Model does not estimate sigma_m; data is insufficient to do so.
 ## Note that RAM stock estimates are not always direct measurements, can be artifically smooth, underestimating sigma_g
 
@@ -131,17 +119,33 @@ fit_models <- function(fish, code){
 }
 ```
 
-
-```{r}
+``` r
 set.seed(123)
 fits <- examples %>% do(fit_models(., code=gs_code))
+```
+
+    |-------------|-------------|-------------|-------------|
+    |-------------------------------------------------------|
+    |-------------|-------------|-------------|-------------|
+    |-------------------------------------------------------|
+
+``` r
 fits 
 ```
+
+    # A tibble: 2 x 8
+    # Groups:   commonname [2]
+          stockid      commonname         r        K   sigma_g       r_sd
+            <chr>           <chr>     <dbl>    <dbl>     <dbl>      <dbl>
+    1 ARGHAKENARG  Argentine hake 1.0387783 1.196112 0.1118370 0.17650455
+    2     PLAICNS European Plaice 0.9055933 1.778186 0.1275455 0.07339706
+    # ... with 2 more variables: K_sd <dbl>, sigma_g_sd <dbl>
 
 <!--
 Do the estimates make sense?  Consider simulation from models, under this historical harvests, compared to historical trajectories
 
-```{r}
+
+```r
 examples %>% ungroup() %>%
   select(year, scaled_biomass, scaled_catch, commonname) %>%
   gather(stock, biomass, -year, -commonname) %>%
@@ -149,28 +153,32 @@ examples %>% ungroup() %>%
   geom_line() + facet_wrap(~commonname, scales = "free")
 ```
 
+![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-6-1.png)
+
 
 -->
-
-```{r}
+``` r
 pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g) 
 pars
 ```
 
+    # A tibble: 2 x 4
+           commonname         r        K   sigma_g
+                <chr>     <dbl>    <dbl>     <dbl>
+    1  Argentine hake 1.0387783 1.196112 0.1118370
+    2 European Plaice 0.9055933 1.778186 0.1275455
 
+------------------------------------------------------------------------
 
--------
+Decision Policies
+=================
 
-# Decision Policies
-
-
-```{r}
+``` r
 options(mc.cores = 4) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_historical"
 ```
 
-
-```{r}
+``` r
 ## Classic Graham-Schaefer. Note that recruitment occurs *before* harvest
 gs <- function(r,K){
   function(x, h){ 
@@ -181,21 +189,21 @@ reward_fn <- function(x,h) pmin(x,h)
 discount <- .99
 ```
 
+Discretize space
+----------------
 
-## Discretize space
+Note that the large values of *K* require we carry the numerical grid out further.
 
-Note that the large values of $K$ require we carry the numerical grid out further.  
-
-```{r}
+``` r
 states <- seq(0,4, length=150)
 actions <- states
 observations <- states
 ```
 
+All parameter values combinations for which we want solutions
+-------------------------------------------------------------
 
-## All parameter values combinations for which we want solutions
-
-```{r}
+``` r
 meta <- expand.grid(commonname = pars$commonname, 
                     sigma_m = c(0, 0.1, 0.2),
                     stringsAsFactors = FALSE) %>%
@@ -205,10 +213,18 @@ meta <- expand.grid(commonname = pars$commonname,
 meta
 ```
 
-## Create the models
+           commonname sigma_m         r        K   sigma_g scenario
+    1  Argentine hake     0.0 1.0387783 1.196112 0.1118370        1
+    2 European Plaice     0.0 0.9055933 1.778186 0.1275455        2
+    3  Argentine hake     0.1 1.0387783 1.196112 0.1118370        3
+    4 European Plaice     0.1 0.9055933 1.778186 0.1275455        4
+    5  Argentine hake     0.2 1.0387783 1.196112 0.1118370        5
+    6 European Plaice     0.2 0.9055933 1.778186 0.1275455        6
 
+Create the models
+-----------------
 
-```{r}
+``` r
 models <- 
   parallel::mclapply(1:dim(meta)[1], 
                      function(i){
@@ -224,10 +240,7 @@ models <-
                      })
 ```
 
-
-
-
-```{r eval=FALSE}
+``` r
 dir.create(log_dir)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
@@ -254,14 +267,9 @@ system.time(
              log_data = log_data)
     })
 )
-
-
-
 ```
 
-
-
-```{r}
+``` r
 meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
   left_join(
     ## use the estimated sigma_m, r, K pars recorded in the logged meta.csv.  Technically
@@ -270,16 +278,20 @@ meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>%
     select(meta, sigma_m, commonname, scenario),   
     by = c("sigma_m", "commonname")) %>% 
   arrange(scenario)
+```
+
+    Warning: Column `commonname` joining factor and character vector, coercing
+    into character vector
+
+``` r
 alphas <- alphas_from_log(meta, log_dir)
 #models <- models_from_log(meta)
 ```
 
+Comparison to the static models
+-------------------------------
 
-
-
-## Comparison to the static models
-
-```{r}
+``` r
 pars <- examples %>% 
   group_by(commonname) %>% 
   summarise(N = max(SSB)) %>% 
@@ -289,11 +301,9 @@ pars <- examples %>%
       distinct())
 ```
 
-
-
 Add corresponding static policy levels on:
 
-```{r}
+``` r
 statics <- function(P){
   f <- gs(P$r, P$K)
   S_star <- optimize(function(x) -f(x,0) + x / discount, c(0, 2* P$K))$minimum
@@ -308,10 +318,11 @@ policy_pars <-
   pars %>% 
   rowwise() %>% 
   do(statics(.))
-```  
-  Convert example data into discrete index space.
+```
 
-```{r}
+Convert example data into discrete index space.
+
+``` r
 index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
 ## repeats each series for each static model
 ex <- examples %>%
@@ -322,7 +333,25 @@ ex <- examples %>%
 ex
 ```
 
-```{r} 
+    # A tibble: 69 x 18
+          scientificname     commonname     stockid           areaname
+                   <chr>          <chr>       <chr>              <chr>
+     1 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     2 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     3 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     4 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     5 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     6 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     7 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     8 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+     9 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+    10 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
+    # ... with 59 more rows, and 14 more variables: country <chr>, year <dbl>,
+    #   SSB <dbl>, TC <dbl>, scaled_catch <dbl>, scaled_biomass <dbl>,
+    #   biomass <int>, catch <int>, S_star <dbl>, F_MSY <dbl>, F_PGY <dbl>,
+    #   N <dbl>, r <dbl>, K <dbl>
+
+``` r
 det_f <- function(S_star, r, K, i) index(pmax(gs(r[[1]],K[[1]])(states,0) - S_star[[1]],0), actions)[i]
 msy_f <- function(F_MSY, i) index(states * F_MSY[[1]], actions)[i]
 pgy_f <- function(F_PGY, i) index(states * F_PGY[[1]], actions)[i]
@@ -340,11 +369,10 @@ historical <- ex %>%
   select(-N)
 ```
 
+Plots
+-----
 
-
-## Plots
-
-```{r}
+``` r
 historical %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
@@ -352,12 +380,12 @@ historical %>%
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
+![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-19-1.png)
 
+POMDP historical
+----------------
 
-## POMDP historical
-
-
-```{r}
+``` r
 pomdp_sims <- 
   pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
            function(.x, .y, .z){
@@ -376,20 +404,15 @@ pomdp_sims <-
            .id = "scenario") 
 ```
 
-
-
-```{r}
+``` r
 pomdp_sims <- 
   meta %>% 
   select(scenario, commonname,sigma_m) %>% 
   left_join(pars) %>%
   right_join(pomdp_sims)
-
 ```
 
-
-
-```{r}
+``` r
 sims <- pomdp_sims %>% 
   mutate(optimal = states[optimal] * N) %>% # original scale
   select(year, optimal, commonname, sigma_m) %>%
@@ -404,7 +427,13 @@ sims <- pomdp_sims %>%
   bind_rows(historical)
 ```
 
-```{r}
+    Warning in bind_rows_(x, .id): binding factor and character vector,
+    coercing into character vector
+
+    Warning in bind_rows_(x, .id): binding character and factor vector,
+    coercing into character vector
+
+``` r
 sims %>%
   filter(model %in% c("biomass", "catch", "pomdp_0.1", "reed", "pgy")) %>%
   ggplot(aes(year, stock, col=model)) +
@@ -412,3 +441,7 @@ sims %>%
   scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
+
+    Warning: Removed 2 rows containing missing values (geom_path).
+
+![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-23-1.png)
