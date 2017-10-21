@@ -1,7 +1,7 @@
 POMDP comparisons across sigma\_m, sigma\_g
 ================
 Carl Boettiger
-2017-10-11
+2017-10-21
 
 ``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
@@ -46,6 +46,9 @@ S_star <- optimize(function(x) -f(x,0) + x / discount,
                    c(0, 2*K))$minimum
 ```
 
+If we observe-&gt;recruit-&gt;harvest, *X*<sub>*t* + 1</sub> = *f*(*X*<sub>*t*</sub>)−*h*<sub>*t*</sub>, then we see the stock right after a harvest and before recuitment, when it is at $X\_t ~ *B*<sub>*M**S**Y*</sub>.
+If we instead did observe-&gt;harvest-&gt;recruit, we would see the stock at its pre-harvest size, $X\_t ~ B\_{MSY} + *H*<sub>*M**S**Y*</sub>.
+
 ``` r
 B_MSY <- S_star
 MSY <- f(B_MSY,0) - B_MSY 
@@ -89,10 +92,11 @@ observations <- states
 We compute the above policies on this grid for later comparison.
 
 ``` r
-policies <- list(
-  det = map_int(pmax(f(states,0) - S_star,0), ~ which.min(abs(actions - .x))),
-  msy = map_int(states, ~ which.min(abs(actions - .x * F_MSY))),
-  pgy = map_int(states, ~ which.min(abs(actions - .x * F_PGY))) )
+policies <- data.frame(
+  det = index(pmax(f(states,0) - S_star,0), actions), # assumes obs->recruit->harvest, f(x_t) - h_t
+ # det = index(pmax(states - S_star,0),     actions), # assumes obs->harvest->recruit, f(x_t - h_t)
+  msy = index(states * F_MSY,               actions),
+  pgy = index(states * F_PGY,               actions))
 ```
 
 POMDP Model
@@ -241,6 +245,38 @@ sims %>%
 
 Policy plots
 ------------
+
+Note that when recruitment occurs before harvest, *f*(*x*)−*h*, to get to *X*<sub>*t*</sub> = *B*<sub>*M**S**Y*</sub> as fast as possible, we actually want to harvest a little bit when X is below *B*<sub>*M**S**Y*</sub>, so that rather than over-shooting *B*<sub>*M**S**Y*</sub> (deterministic) recruitment would land us right at it *B*<sub>*M**S**Y*</sub>. This corresponds to constant escapement. The discrete grid makes these appear slightly stepped.
+
+Note that the deterministic solution crosses the MSY solution at an observed value of *B*<sub>*M**S**Y*</sub> (i.e. *K*/2 = 0.5). PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.
+
+``` r
+policy_table <- tibble(state = 1:length(states)) %>%
+  bind_cols(policies) %>%
+  gather(policy, harvest, -state) %>%
+  mutate(harvest = actions[harvest], state = states[state])
+
+policy_table %>% 
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-16-1.png)
+
+Note that when recruitment happens before harvest, escapement is *f*(*x*<sub>*t*</sub>)−*h*<sub>*t*</sub>, not *x*<sub>*t*</sub> − *h*<sub>*t*</sub>. The effect of a continuous function map *f* on a discrete grid is also visible as slight wiggles.
+
+``` r
+policy_table  %>%
+  mutate(escapement = f(state,harvest))  %>% 
+  ggplot(aes(state, escapement, col=policy)) + 
+  geom_line() + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-17-1.png)
+
+### Adding the POMDP policy solution
 
 Historical data estimation
 --------------------------
