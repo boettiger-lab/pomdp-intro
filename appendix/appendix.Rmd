@@ -9,11 +9,15 @@ output:
 
 
 ```{r aethetics, include=FALSE}
-knitr::opts_chunk$set(comment="", message=FALSE)
+knitr::opts_chunk$set(comment="", message=FALSE, cache=TRUE)
 ggplot2::theme_set(ggplot2::theme_bw())
 ```
 
 ```{r helper_routines, include = FALSE}
+## map cts values to nearest grid indices 
+index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
+
+
 det_simulations <- function(x0 = 1/6, Tmax = 20, 
                               B_MSY = K / 2, 
                               F_MSY = r / 2 , 
@@ -21,20 +25,18 @@ det_simulations <- function(x0 = 1/6, Tmax = 20,
   
   msy_policy <- function(x) F_MSY * x
   pgy_policy <- function(x) F_PGY * x
-  escapement_policy <- function(x){  ## ASSUMES harvest takes place *after* recruitment
-    if(f(x,0) > B_MSY)
-      f(x,0) - B_MSY
-    else
-      0
-  }
+  det_policy <- function(x) pmax(f(x,0) - B_MSY,0) ## ASSUMES harvest takes place *after* recruitment
+  reed_policy  <- function(x) pmax(x - B_MSY,0) ## Optimal when harvest takes place *before* recruitment, assumes we are seeing a pre-harvest size.
+  ## consequently, if we use such a policy when we are seeing a the post-harvest size, we give too much buffer.  
   
   # a simulation function
   det_sim <- function(policy, f, x0, Tmax){
     action <- state <- obs <- as.numeric(rep(NA,Tmax))
     state[1] <- x0
     for(t in 1:(Tmax-1)){
-      action[t] <- policy(state[t])
-      obs[t] <- state[t] - action[t]  # if we observe after harvest but before recruitment
+      obs[t] <- state[t]
+      
+      action[t] <- policy(obs[t])
       state[t+1] <- f(state[t], action[t]) 
     }
     data.frame(time = 1:Tmax, state, action, obs)
@@ -43,8 +45,10 @@ det_simulations <- function(x0 = 1/6, Tmax = 20,
   # simulate each policy, returning all results in a single unified data frame 
   sims <- 
     list(msy = msy_policy, 
-         det = escapement_policy, 
-         pgy = pgy_policy) %>% 
+         det = det_policy, 
+         pgy = pgy_policy
+         #opt = reed_policy
+         ) %>% 
     map_df(det_sim, 
            f, x0, Tmax, 
            .id = "method") 
@@ -99,6 +103,8 @@ S_star <- optimize(function(x) -f(x,0) + x / discount,
 ```
 
 
+If we observe->recruit->harvest, $X_{t+1} = f(X_t) - h_t$, then we see the stock right after a harvest and before recuitment, when it is at $X_t ~ $B_{MSY}$.  
+If we instead did observe->harvest->recruit, we would see the stock at its pre-harvest size, $X_t ~ B_{MSY} + $H_{MSY}$.  
 
 ```{r}
 B_MSY <- S_star
@@ -146,11 +152,16 @@ We compute the above policies on this grid for later comparison.
 
 
 ```{r}
-policies <- list(
-  det = map_int(pmax(f(states,0) - S_star,0), ~ which.min(abs(actions - .x))),
-  msy = map_int(states, ~ which.min(abs(actions - .x * F_MSY))),
-  pgy = map_int(states, ~ which.min(abs(actions - .x * F_PGY))) )
+
+
+policies <- data.frame(
+  det = index(pmax(f(states,0) - S_star,0), actions), # assumes obs->recruit->harvest, f(x_t) - h_t
+ # det = index(pmax(states - S_star,0),     actions), # assumes obs->harvest->recruit, f(x_t - h_t)
+  msy = index(states * F_MSY,               actions),
+  pgy = index(states * F_PGY,               actions))
 ```
+
+
 
 # POMDP Model
 
@@ -288,8 +299,39 @@ sims %>%
 ```
 
 
+
 ## Policy plots
 
+Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (deterministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  
+
+Note that the deterministic solution crosses the MSY solution at an observed value of $B_{MSY}$ (i.e. $K/2 = 0.5$).  PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.  
+
+```{r}
+policy_table <- tibble(state = 1:length(states)) %>%
+  bind_cols(policies) %>%
+  gather(policy, harvest, -state) %>%
+  mutate(harvest = actions[harvest], state = states[state])
+
+policy_table %>% 
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+
+```
+
+Note that when recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles.  
+
+```{r}
+policy_table  %>%
+  mutate(escapement = f(state,harvest))  %>% 
+  ggplot(aes(state, escapement, col=policy)) + 
+  geom_line() + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+
+```
+
+
+### Adding the POMDP policy solution
 
 
 
