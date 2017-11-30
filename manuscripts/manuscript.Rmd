@@ -155,7 +155,10 @@ challenges in such an implementation, but to observe that such dynamic, better-p
 policies can be seen to embrace rather than ignore economic realities.  Notably,
 the optimization approach assumed in POMDP can be easily adapted to reflect other
 constraints such as the cost of idle fleets if a fishery is closed, or include
-the value of ecosystem services from fish not harvested [@Halpern2013].  <!--Alternate utility functions do not increase
+the value of ecosystem services from fish not harvested [@Halpern2013].  
+
+
+<!--Alternate utility functions do not increase
 the complexity of the solution.  Note that fixed cost of a fleet doesn't alter the answer at all:
 if you have the strategy that optimizes your profits when you have no expenses, you don't do a 
 different strategy that gets less profit unless it will also lower costs.  So whether or not

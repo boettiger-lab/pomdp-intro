@@ -1,0 +1,5 @@
+Type: Compendium
+Package: pomdpintro
+Version: 0.1.0
+Depends: nimble, tidyverse, sarsop, MDPtoolbox, rmarkdown, printr, parallel
+Remotes: boettiger-lab/sarsop
