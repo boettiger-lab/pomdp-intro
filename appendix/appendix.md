@@ -1,7 +1,7 @@
 POMDP comparisons across sigma\_m, sigma\_g
 ================
 Carl Boettiger
-2017-10-21
+2017-11-30
 
 ``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
@@ -75,7 +75,7 @@ det_simulations(x0 = 1/6, Tmax = 20, B_MSY, F_MSY, F_PGY) %>%
   geom_hline(aes(yintercept=B_MSY), lwd=1) 
 ```
 
-![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-7-1.png)
+![](appendix_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 ------------------------------------------------------------------------
 
@@ -241,7 +241,7 @@ sims %>%
   facet_grid(sigma_m ~ sigma_g)
 ```
 
-![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-15-1.png)
+![](appendix_files/figure-markdown_github/unnamed-chunk-15-1.png)
 
 Policy plots
 ------------
@@ -262,7 +262,7 @@ policy_table %>%
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
 
-![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-16-1.png)
+![](appendix_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
 Note that when recruitment happens before harvest, escapement is *f*(*x*<sub>*t*</sub>)−*h*<sub>*t*</sub>, not *x*<sub>*t*</sub> − *h*<sub>*t*</sub>. The effect of a continuous function map *f* on a discrete grid is also visible as slight wiggles.
 
@@ -274,7 +274,7 @@ policy_table  %>%
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
 
-![](appendix_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-17-1.png)
+![](appendix_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
 ### Adding the POMDP policy solution
 

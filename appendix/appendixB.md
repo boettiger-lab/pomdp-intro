@@ -153,7 +153,7 @@ examples %>% ungroup() %>%
   geom_line() + facet_wrap(~commonname, scales = "free")
 ```
 
-![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-6-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 
 -->
@@ -380,7 +380,7 @@ historical %>%
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
-![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-19-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 POMDP historical
 ----------------
@@ -444,4 +444,4 @@ sims %>%
 
     Warning: Removed 2 rows containing missing values (geom_path).
 
-![](appendixB_files/figure-markdown_github-ascii_identifiers/unnamed-chunk-23-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-23-1.png)
