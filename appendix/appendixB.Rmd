@@ -165,7 +165,7 @@ pars
 
 
 ```{r}
-options(mc.cores = 4) # Reserve ~ 10 GB per core
+options(mc.cores = parallel::detectCores()) # Reserve ~ 10 GB per core
 log_dir <- "pomdp_historical"
 ```
 
