@@ -11,7 +11,7 @@ library(parallel)
 ```
 
 ``` r
-options(mc.cores=9)
+options(mc.cores=parallel::detectCores())
 ```
 
 Basic deterministic model
@@ -145,7 +145,7 @@ POMDP solution
 
 The POMDP solution is represented by a collection of alpha-vectors and values, returned in a `*.policyx` file. Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
 
-Because this solution is computationally somewhat intensive, we provide
+Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel. Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
 ``` r
 dir.create(log_dir)
