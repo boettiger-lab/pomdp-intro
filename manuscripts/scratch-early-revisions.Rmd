@@ -1,0 +1,76 @@
+
+
+Yet fisheries are not managed at their maximum ecological or economic potential.  
+Taken as a whole, most ocean fisheries yield a net negative economic return
+[@FAO2009], while some 68% of global fisheries are not in good biological condition [@Costello2016].
+Nevertheless, fisheries management in both theory and practice are 
+
+
+In a deterministic world at equilibrium (without economic discounting), 
+the policies of constant escapement and maximum
+sustainable yield look identical: the stock is maintained at a fixed stock
+size or biomass, called $B_{MSY}$ in the MSY/fisheries jargon, which is 
+equivalent to the escapement $S^*$ in the optimal control jargon and equal
+to half the carrying capacity, or $K/2$, in the familiar Graham-Schaefer 
+(logistic growth followed by harvest) model. Likewise, the harvest is identical,
+occuring after recruitment and bringing the population back to this optimal
+level; an annual harvest of $H_{MSY} = rK/4$ in Graham-Schafer model for either policy.
+This similarity disguises significant differences in how the policies behave
+when the biomass is either above or below $B_{MSY}$.
+
+The economically optimal amount to harvest when the population is below 
+$B_{MSY}$ is zero -- no harvest.  This permits the population to return
+as rapidly as possible to the stock size at which it generates the maximum
+yield, and thus the maximum economic return.  This result holds even when
+recruitment is stochastic and thus future stock sizes are uncertain, 
+as rigorously proven by @Reed1979.  Perhaps surprisingly, this is not what
+fisheries management thinks of as a maximum sustainable yield (MSY) policy,
+and does not reflect how fisheries are managed today. Rather, an MSY policy
+is intepreted as fishing at the *effort*, $F_{MSY} = H_{MSY} / B_{MSY}$ that would generate the maximum
+sustainable yield if the population was at the optimal biomass, $B_{MSY}$,
+*regardless* of the current stock size. It is important to realize this policy
+is framed in terms of *effort* $F$: for example, the length of the year open to fishing,
+or equivalently, the per-capita mortality rate of fish, and not in terms of harvest, $H$.
+A population below $B_{MSY}$ that remains harvested at a constant $H_{MSY}$ will eventually be
+driven to extinction, but harvested at a constant $H = F_{MSY} \cdot B$ for $B < B_{MSY}$,
+the stock will eventually recover to $B_{MSY}$.  Consequently, this simple policy should
+converge to the optimal policy in the long run, assuming there is no uncertainty in
+recruitment, measurement, or implementation.  
+
+The economically optimal policy of constant-escapement also differs from MSY
+when stocks are above $B_{MSY}$.  As before, the MSY policy continues to assume
+a fixed mortality rate, $F_{MSY}$, which should eventually reduce the stock to
+the level of $B_{MSY}$.  Also as before, the optimal policy is not so patient --
+to derive maximum yield it seeks to return the population to the $B_{MSY}$ not
+*eventually*, but as quickly as possible, and thus will recommend a harvest larger
+than $H_{MSY}$ to accomplish this. These differences become more salient in the case
+of a population under stochastic growth, since the resulting variation leads
+to a population that frequently above or below $B_{MSY}$.  The greater responsiveness
+of the constant-escapement policy to the current stock size thus necessarily 
+results in both the faster recovery of overexploited stocks and higher economic
+returns.
+
+The variation in the harvest required to achieve this constant escapement policy
+can seem impractical from a top-down management perspective.  However, it is 
+important to realize that the application and implications of this policy are
+not purely academic. Economists have for some time observed these inherent 
+inefficiencies, and argued that the establishment of property rights in fisheries [@Arnason2012].
+Approaches such as individual transferable quotas (ITQs) would incentivise
+fisheries behavior to converge towards the more dynamic harvests of a constant
+escapement policy, as doing so would increase the value of an individual's share.
+It is precisely this reasoning which explains the broad patterns of recovery
+observed in the landmark paper @Costello2016, which compares future of global
+fisheries under a Rights Based Fisheries Mangement (RBFM), fishing at MSY,
+and "buisness as usual" (BAU) scenario.  Their analysis assumes that a RBFM
+approach should achieve the economically optimal policy of constant-escapement,
+which alone explains why RBFM should see both faster recovery and higher 
+economic yields than MSY, as we have just described. The substantial detail their
+analysis introduces with respect to the dynamics of over 4000 individual stocks
+as well as additional economic knock-on effects from managing based on quotas
+rather than fishing effort permit them to offer quantitatively precise 
+estimates regarding the time required and economic value generated by such
+recovery, but are not essential to understand the broad pattern that suggests
+that nearly all stocks should recover under either an RBFM or MSY-style 
+management, but that the recovery would be fastest and the economic benefits
+greatest under the former.  That conclusion was already implicit in how
+these models are defined.  
