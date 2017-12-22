@@ -280,7 +280,7 @@ sims <- bind_rows(static_sims, pomdp_sims) %>%
     left_join(meta) %>%    ## combine output with scenarios
     mutate(state = states[state], action = actions[action]) # index -> value
 
-write_csv(sims, "sims.csv")
+write_csv(sims, "appendix_files/sims.csv")
 ```
 
 
@@ -303,9 +303,6 @@ sims %>%
 
 ## Policy plots
 
-Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (deterministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  
-
-Note that the deterministic solution crosses the MSY solution at an observed value of $B_{MSY}$ (i.e. $K/2 = 0.5$).  PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.  
 
 ```{r}
 policy_table <- tibble(state = 1:length(states)) %>%
@@ -313,14 +310,26 @@ policy_table <- tibble(state = 1:length(states)) %>%
   gather(policy, harvest, -state) %>%
   mutate(harvest = actions[harvest], state = states[state])
 
+write_csv(policy_table, "appendix_files/policy_table.csv")
+```
+
+Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (deterministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  
+
+Note that the deterministic solution crosses the MSY solution at an observed value of $B_{MSY}$ (i.e. $K/2 = 0.5$).  PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.  
+
+
+
+```{r}
 policy_table %>% 
   ggplot(aes(state, harvest, col=policy)) + 
   geom_line()  + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
-
 ```
 
-Note that when recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles.  
+Note that when recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles when we plot in terms of escapement instead of harvest (as is common in the optimal control literature in fisheries, e.g. @Sethi2005).  
+
+Note that under the optimal solution, escapement is effectively constant at $B_{MSY} = 0.5$: for all states above a certain size the population
+is harvested back down to that size. Note that even stocks observed at states slightly below $B_{MSY} = 0.5$ achieve this target escapement, since we are following the classic Graham Shaeffer formulation here where we observe first, then recruitment happens before harvest, and thus we see the population at smaller size than we harvest it.  In classical escapement analysis, observations are usually indexed instead to occur immediately before harvests, and this inflection point occurs right at $B_{MSY}$.
 
 ```{r}
 policy_table  %>%
@@ -334,11 +343,29 @@ policy_table  %>%
 
 ### Adding the POMDP policy solution
 
+In the above plots for the MSY
 
 
-## Historical data estimation
+```{r}
+unif_prior = rep(1, length(states)) / length(states) # initial belief
+unif <- compute_policy(alpha, m$transition, m$observation, m$reward,  unif_prior)
 
-## Historical data POMDP & other solutions
+```
 
-## Historical combined plot
+```{r}
+i_star <- which.min(abs(states - S_star))
+ i_low <- which.min(abs(states - 0.5 * S_star))
+ i_high <- which.min(abs(states - 1.5 * S_star))
+#i_low <- 2
+#i_high <- which.min(abs(states - K))
 
+prior_star <- m$observation[,i_star,1]
+prior_low <- m$observation[,i_low,1]
+prior_high <- m$observation[,i_high,1] 
+
+
+star <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_star)
+low <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_low)
+high <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_high)
+
+```

@@ -1,88 +1,127 @@
-POMDP comparisons across sigma\_m, sigma\_g
-================
-Carl Boettiger
-2017-12-21
+---
+title: "POMDP comparisons across sigma_m, sigma_g"
+author: "Carl Boettiger"
+date: "`r Sys.Date()`"
+output: 
+  github_document: default
+  pdf_document: default
+---
 
-``` r
+
+```{r aethetics, include=FALSE}
+knitr::opts_chunk$set(comment="", message=FALSE, cache=TRUE)
+ggplot2::theme_set(ggplot2::theme_bw())
+```
+
+
+```{r message=FALSE}
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
 ```
 
-``` r
+```{r}
 options(mc.cores=parallel::detectCores())
 ```
 
-Basic deterministic model
--------------------------
 
-``` r
+
+## Basic deterministic model
+
+```{r}
 r <- 0.75
 K <- 1
 
-## Classic Graham-Schaefer. Note that recruitment occurs *before* harvest
+## Unlike classic Graham-Schaefer, this assumes harvest occurs right after assessment, before recruitment
 f <- function(x, h){ 
-    x + x * r * (1 - x / K) - pmin(x,h)
+    s <- pmax(x-h, 0) 
+    s + s * r * (1 - s / K) 
 }
 ```
 
 Utility (reward) function:
 
-``` r
+```{r}
 reward_fn <- function(x,h) pmin(x,h)
 discount <- 0.99
 ```
 
-Calculating MSY
----------------
 
-This uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.
+## Calculating MSY
 
-``` r
+This uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.  
+
+```{r}
 ## A generic routine to find stock size (x) which maximizes 
 ## growth rate (f(x,0) - x, where x_t+1 = f(x_t))
 S_star <- optimize(function(x) -f(x,0) + x / discount, 
                    c(0, 2*K))$minimum
 ```
 
-If we observe-&gt;recruit-&gt;harvest, *X*<sub>*t* + 1</sub> = *f*(*X*<sub>*t*</sub>)−*h*<sub>*t*</sub>, then we see the stock right after a harvest and before recuitment, when it is at $X\_t ~ *B*<sub>*M**S**Y*</sub>.
-If we instead did observe-&gt;harvest-&gt;recruit, we would see the stock at its pre-harvest size, $X\_t ~ B\_{MSY} + *H*<sub>*M**S**Y*</sub>.
 
-``` r
-B_MSY <- S_star
-MSY <- f(B_MSY,0) - B_MSY 
+Since we `observe` -> `harvest` -> `recruit`, we would observe the stock at its pre-harvest size, $X_t \sim B_{MSY} + H_{MSY}$.
+
+```{r}
+#B_MSY <- S_star     # recruit first, as in classic Graham-Schaefer
+B_MSY <- f(S_star,0) # harvest first
+
+#MSY <- f(B_MSY,0) - B_MSY  # recruit first
+MSY <- B_MSY - S_star  # harvest first
 
 F_MSY <- MSY / B_MSY  
 F_PGY = 0.8 * F_MSY
 ```
 
-``` r
-## Make sure these match the known analytic solutions for Graham-Schaefer model (only true of discount = 1)
-if(discount == 1){
-  testthat::expect_equal(B_MSY, K / 2)
-  testthat::expect_equal(MSY, r * K / 4)
-  testthat::expect_equal(F_MSY, r / 2)
-}
-```
 
-As a basic reference point, simulate these three policies in a purely deterministic world. Unlike later simulations, here we consider all states an actions exactly (that is, within floating point precision). Later, states and actions are limited to a discrete set, so solutions can depend on resolution and extent of that discretization.
+As a basic reference point, simulate these three policies in a purely deterministic world.  Unlike later simulations, here we consider all states an actions exactly (that is, within floating point precision).  Later, states and actions are limited to a discrete set, so solutions can depend on resolution and extent of that discretization. 
 
-``` r
-det_simulations(x0 = 1/6, Tmax = 20, B_MSY, F_MSY, F_PGY) %>%
+
+
+
+```{r}
+
+msy_policy <- function(x) F_MSY * x
+pgy_policy <- function(x) F_PGY * x
+
+## ASSUMES harvest takes place *before* recruitment, f(x-h), not after.
+escapement_policy <- function(x) pmax(x - S_star,0)  
+x0 <- K/6
+Tmax = 20
+det_sim <- function(policy, f, x0, Tmax){
+    action <- state <- obs <- as.numeric(rep(NA,Tmax))
+    state[1] <- x0
+
+    for(t in 1:(Tmax-1)){
+      action[t] <- policy(state[t])
+      obs[t] <- state[t] - action[t]  # if we observe after harvest but before recruitment
+      state[t+1] <- f(state[t], action[t]) 
+    }
+    data.frame(time = 1:Tmax, state, action, obs)
+  }
+
+sims <- 
+  list(msy = msy_policy, 
+       pgy = pgy_policy,
+       det = escapement_policy) %>% 
+  map_df(det_sim, 
+         f, x0, Tmax, 
+         .id = "method") 
+sims %>%
   ggplot(aes(time, state, col=method)) + 
   geom_line() + 
-  geom_hline(aes(yintercept=B_MSY), lwd=1) 
+  geom_hline(aes(yintercept=B_MSY), lwd=1)
+
 ```
 
-![](appendix_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
-------------------------------------------------------------------------
 
-Introduce a discrete grid
--------------------------
+-----------
 
-``` r
+
+##  Introduce a discrete grid
+
+```{r}
 ## Discretize space
 states <- seq(0,2, length=100)
 actions <- states
@@ -91,7 +130,10 @@ observations <- states
 
 We compute the above policies on this grid for later comparison.
 
-``` r
+
+```{r}
+
+
 policies <- data.frame(
   det = index(pmax(f(states,0) - S_star,0), actions), # assumes obs->recruit->harvest, f(x_t) - h_t
  # det = index(pmax(states - S_star,0),     actions), # assumes obs->harvest->recruit, f(x_t - h_t)
@@ -99,12 +141,13 @@ policies <- data.frame(
   pgy = index(states * F_PGY,               actions))
 ```
 
-POMDP Model
-===========
+
+
+# POMDP Model
 
 We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values:
 
-``` r
+```{r}
 meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.2), 
                     sigma_m = c(0, 0.1, 0.2),
                     stringsAsFactors = FALSE) %>%
@@ -113,18 +156,8 @@ log_dir <- "appendix_alphas" # Store the computed solution files here
 meta
 ```
 
-      sigma_g sigma_m scenario
-    1    0.02     0.0        1
-    2    0.10     0.0        2
-    3    0.20     0.0        3
-    4    0.02     0.1        4
-    5    0.10     0.1        5
-    6    0.20     0.1        6
-    7    0.02     0.2        7
-    8    0.10     0.2        8
-    9    0.20     0.2        9
 
-``` r
+```{r}
 models <- 
   parallel::mclapply(1:dim(meta)[1], 
            function(i){
@@ -138,16 +171,19 @@ models <-
   sigma_m = meta[i,"sigma_m"][[1]],
   noise = "normal")
 })
+
 ```
 
-POMDP solution
---------------
 
-The POMDP solution is represented by a collection of alpha-vectors and values, returned in a `*.policyx` file. Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
+## POMDP solution
 
-Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel. Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
+The POMDP solution is represented by a collection of alpha-vectors and values, returned in a `*.policyx` file.
+Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
 
-``` r
+Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
+
+
+```{r eval=FALSE}
 dir.create(log_dir)
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
@@ -173,19 +209,20 @@ system.time(
              log_data = log_data)
     })
 )
+
 ```
 
 We can read the stored solution from the log:
 
-``` r
+```{r}
 meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% left_join(meta) %>% arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
-Simulating the static policies under uncertainty
-------------------------------------------------
 
-``` r
+## Simulating the static policies under uncertainty
+
+```{r static_sims}
 Tmax <- 100
 x0 <- which.min(abs(K/6 - states))
 reps <- 100
@@ -197,12 +234,12 @@ static_sims <-
                         x0 = x0, Tmax = Tmax, policy = policy, reps = reps)$df
             map_dfr(policies, do_sim, .id = "method")
           }, .id = "scenario") 
+
 ```
 
-Simulating the POMDP policies under uncertiainty
-------------------------------------------------
+## Simulating the POMDP policies under uncertiainty
 
-``` r
+```{r pomdp_sims}
 # slower!
 unif_prior <- rep(1, length(states)) / length(states)
 pomdp_sims <- 
@@ -215,9 +252,10 @@ pomdp_sims <-
            .id = "scenario")
 ```
 
+
 Combine the resulting data frames
 
-``` r
+```{r}
 sims <- bind_rows(static_sims, pomdp_sims) %>%
     left_join(meta) %>%    ## combine output with scenarios
     mutate(state = states[state], action = actions[action]) # index -> value
@@ -225,12 +263,12 @@ sims <- bind_rows(static_sims, pomdp_sims) %>%
 write_csv(sims, "appendix_files/sims.csv")
 ```
 
-Figure S1
----------
 
-We the results varying over different noise intensities, sigma\_g, and sigma\_m. Figure 1 of the main text considers the case of sigma\_g = 0.05, sigma\_m = 0.1
+##  Figure S1
 
-``` r
+We the results varying over different noise intensities, sigma_g, and sigma_m.  Figure 1 of the main text considers the case of sigma_g = 0.05, sigma_m = 0.1
+
+```{r}
 sims %>%
   select(time, state, rep, method, sigma_m, sigma_g) %>%
   group_by(time, method, sigma_m, sigma_g) %>%
@@ -241,16 +279,15 @@ sims %>%
   facet_grid(sigma_m ~ sigma_g)
 ```
 
-![](appendix_files/figure-markdown_github/unnamed-chunk-15-1.png)
 
-Policy plots
-------------
 
-Note that when recruitment occurs before harvest, *f*(*x*)−*h*, to get to *X*<sub>*t*</sub> = *B*<sub>*M**S**Y*</sub> as fast as possible, we actually want to harvest a little bit when X is below *B*<sub>*M**S**Y*</sub>, so that rather than over-shooting *B*<sub>*M**S**Y*</sub> (deterministic) recruitment would land us right at it *B*<sub>*M**S**Y*</sub>. This corresponds to constant escapement. The discrete grid makes these appear slightly stepped.
+## Policy plots
 
-Note that the deterministic solution crosses the MSY solution at an observed value of *B*<sub>*M**S**Y*</sub> (i.e. *K*/2 = 0.5). PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.
+Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (deterministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  
 
-``` r
+Note that the deterministic solution crosses the MSY solution at an observed value of $B_{MSY}$ (i.e. $K/2 = 0.5$).  PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.  
+
+```{r}
 policy_table <- tibble(state = 1:length(states)) %>%
   bind_cols(policies) %>%
   gather(policy, harvest, -state) %>%
@@ -259,34 +296,27 @@ policy_table <- tibble(state = 1:length(states)) %>%
 write_csv(policy_table, "appendix_files/policy_table.csv")
 ```
 
-``` r
+
+
+```{r}
 policy_table %>% 
   ggplot(aes(state, harvest, col=policy)) + 
   geom_line()  + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
 
-![](appendix_files/figure-markdown_github/unnamed-chunk-17-1.png)
+Note that when recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles.  
 
-Note that when recruitment happens before harvest, escapement is *f*(*x*<sub>*t*</sub>)−*h*<sub>*t*</sub>, not *x*<sub>*t*</sub> − *h*<sub>*t*</sub>. The effect of a continuous function map *f* on a discrete grid is also visible as slight wiggles.
-
-``` r
+```{r}
 policy_table  %>%
   mutate(escapement = f(state,harvest))  %>% 
   ggplot(aes(state, escapement, col=policy)) + 
   geom_line() + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+
 ```
 
-![](appendix_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 ### Adding the POMDP policy solution
 
-Historical data estimation
---------------------------
 
-Historical data POMDP & other solutions
----------------------------------------
-
-Historical combined plot
-------------------------

@@ -13,8 +13,10 @@ library(parallel)
 ```
 
 ``` r
+if(!file.exists("ramlegacy.zip")){
 download.file("https://depts.washington.edu/ramlegac/wordpress/databaseVersions/RLSADB_v3.0_(assessment_data_only)_excel.zip",
               "ramlegacy.zip")
+}
 ```
 
 ``` r
@@ -420,9 +422,9 @@ sims <- pomdp_sims %>%
   ## treat each sigma_m value as separate 'model'
   mutate(sigma_m = as.factor(sigma_m)) %>%
   mutate(model = recode(sigma_m, 
-                        "0" = "reed",
-                        "0.1" = "pomdp_0.1", 
-                        "0.2" = "pomdp_0.2")) %>%
+                        "0" = "Reed",
+                        "0.1" = "POMDP", 
+                        "0.2" = "POMDP_0.2")) %>%
   select(-sigma_m) %>%
   bind_rows(historical)
 ```
@@ -434,8 +436,12 @@ sims <- pomdp_sims %>%
     coercing into character vector
 
 ``` r
+write_csv(sims,"appendixB_files/sims.csv")
+```
+
+``` r
 sims %>%
-  filter(model %in% c("biomass", "catch", "pomdp_0.1", "reed", "pgy")) %>%
+  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
   scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +

@@ -25,7 +25,29 @@ lineno: true
 
 bibliography: citations.bib
 output: rticles::elsevier_article
+layout: 3p # review # review = doublespace, 3p = singlespace, 5p = two-column
+
 ---
+
+
+```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, dev="CairoPDF", fig.width=7, fig.height=7)
+library(tidyverse)
+library(gridExtra)
+library(ggthemes)
+colours <- ptol_pal()(2)
+```
+
+```{r suggested_libs}
+library(hrbrthemes)
+library(extrafont)
+##extrafont::font_import(prompt=FALSE)    # One-time use to set up fonts, can be slow.
+hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
+extrafont::loadfonts()
+ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
+#ggplot2::theme_set(theme_bw()) # simpler theme if you do not have these fonts
+```
+
 
 Imperfect information is ubiquitous in ecological management and conservation decision making. While the pressing concerns of global change have put the spotlight on *forecasting*, i.e. the uncertainty of the future [e.g. @Petchy2015], management decisions must also contend with uncertainty of the *present*: How many fish are in the sea today? What regions harbor the most fragile biodiversity? How have invasive species transformed native communities? A recognition of the importance of uncertainty as well as sophisticated methods and tools to do so has become increasingly widespread in the context of estimating ecological models from available data, thanks in large part to the rise of approaches such as Hierachical Bayesian Modeling, along with convenient software tools for implementing these methods.  In sharp contrast to that shift, the treatment of uncertainty in decisions -- how the uncertainty in models should be reflected in scientific recommendations, remains far less developed, more qualitative, and underserved by available tools.  In this paper we illustrate how uncertainty in measurement has a dramatic negative impact on outcomes under a variety of these exsiting approaches, which can be avoided through the use of more formal approaches that have since been developed in other fields that can likewise be implemented in software tools.  This insight both resolves a long-standing paradox in fisheries management and has important implications for how ecosystem management deals with uncertainty more generally.
 
@@ -102,7 +124,10 @@ Numerically, each of these functions are defined over a discrete set of possible
 
 ## Results 
 
-- Replicate simulations 
+
+### Replicate simulations 
+
+
 
 Moderate / modest sigma_g, sigma_m
 
@@ -110,9 +135,22 @@ Moderate / modest sigma_g, sigma_m
 
 - pomdp policies
 
-- historical data.  
+
+
+
+### Comparisons to historical data
+
+
+
 
 ```{r}
+sims <- read_csv("../appendix/appendixB_files/sims.csv")
+sims %>%
+  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
+  ggplot(aes(year, stock, col=model)) +
+  geom_line(lwd=1) +
+  scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +
+  facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
 
@@ -182,5 +220,6 @@ the year. Because regulating effort is both less direct and more difficult to en
 in the expected harvest is also larger than in regulating catch.  
 -->
 
+# References 
 
 
