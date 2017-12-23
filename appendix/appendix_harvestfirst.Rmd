@@ -132,6 +132,7 @@ We compute the above policies on this grid for later comparison.
 
 
 ```{r}
+index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
 
 
 policies <- data.frame(
