@@ -64,7 +64,7 @@ Since we `observe` -> `harvest` -> `recruit`, we would observe the stock at its 
 
 ```{r}
 #B_MSY <- S_star     # recruit first, as in classic Graham-Schaefer
-B_MSY <- f(S_star,0) # harvest first
+B_MSY <- f(S_star,0) # harvest first, we observe the population at B_msy + h
 
 #MSY <- f(B_MSY,0) - B_MSY  # recruit first
 MSY <- B_MSY - S_star  # harvest first
@@ -148,11 +148,11 @@ policies <- data.frame(
 We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values:
 
 ```{r}
-meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.2), 
-                    sigma_m = c(0, 0.1, 0.2),
+meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.15), 
+                    sigma_m = c(0, 0.1, 0.15),
                     stringsAsFactors = FALSE) %>%
         mutate(scenario  = as.character(1:length(sigma_m)))
-log_dir <- "appendix_alphas" # Store the computed solution files here
+log_dir <- "appendix_alphas_harvestfirst" # Store the computed solution files here
 meta
 ```
 
@@ -183,7 +183,7 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 dir.create(log_dir)
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
@@ -204,7 +204,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 0.00000002,
-             timeout = 10000,
+             timeout = 15000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -305,7 +305,8 @@ policy_table %>%
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
 
-Note that when recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles.  
+
+
 
 ```{r}
 policy_table  %>%
