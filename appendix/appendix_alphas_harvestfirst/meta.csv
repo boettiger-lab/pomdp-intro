@@ -1,0 +1,10 @@
+id,load_time_sec,init_time_sec,run_time_sec,final_precision,end_condition,n_states,n_obs,n_actions,discount,date,model,r,K,sigma_g,sigma_m,noise,scenario
+c33705c772,3.42,1.76,15000,0.000501701,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:41:35,gs,0.75,1,0.02,0,normal,1
+c53705c772,4.13,5.7,15000,0.000546287,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:42:34,gs,0.75,1,0.15,0,normal,3
+c43705c772,3.94,4.31,15000.2,0.000507004,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:42:38,gs,0.75,1,0.1,0,normal,2
+c83705c772,4.84,7259.16,15058.4,0.51557,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:49:04,gs,0.75,1,0.15,0.1,normal,6
+c93705c772,4.8,1667.08,15209.6,0.254389,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:50:22,gs,0.75,1,0.02,0.15,normal,7
+c63705c772,4.51,1651.22,15208.7,0.129425,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:50:25,gs,0.75,1,0.02,0.1,normal,4
+ca3705c772,4.98,5521.91,15183.9,1.32694,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:51:01,gs,0.75,1,0.1,0.15,normal,8
+c73705c772,4.94,5382.17,15200.2,0.382258,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:51:18,gs,0.75,1,0.1,0.1,normal,5
+cb3705c772,5.02,7526.41,15291.2,2.25055,  Preset timeout reached,100,100,100,0.99,2017-12-24 01:52:45,gs,0.75,1,0.15,0.15,normal,9
