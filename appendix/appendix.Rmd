@@ -472,9 +472,23 @@ pomdp_policies <- df %>%
 ```
 
 
+
+### Harvest 
+
 ```{r}
 pomdp_policies %>% 
   ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+
+
+### Escapement
+
+```{r}
+pomdp_policies %>% 
+  ggplot(aes(state, escapement, col=policy)) + 
   geom_line()  + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
