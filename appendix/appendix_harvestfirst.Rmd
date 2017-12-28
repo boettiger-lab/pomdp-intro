@@ -40,23 +40,24 @@ f <- function(x, h){
 }
 ```
 
-Utility (reward) function:
+Utility (reward) function.  (Note that setting a smaller discount will take longer to converge to smooth POMDP solution, but result in `S_star` closer to the simple `B_MSY`.)  
 
 ```{r}
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 0.99
+discount <- 0.95
 ```
 
 
 ## Calculating MSY
 
-This uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.  
+This uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.  (Note that this also depends on the discount rate since future profits are worth proportionally less than current profits).
 
 ```{r}
 ## A generic routine to find stock size (x) which maximizes 
 ## growth rate (f(x,0) - x, where x_t+1 = f(x_t))
 S_star <- optimize(function(x) -f(x,0) + x / discount, 
                    c(0, 2*K))$minimum
+S_star
 ```
 
 
@@ -183,14 +184,12 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
-```{r}
-options(mc.cores=9)
-```
-
 ```{r eval=TRUE}
 dir.create(log_dir)
 
-## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
+## POMDP solution 
+## (slow, >10,000 seconds per scenario for discount ~ 0.95;
+## needs much longer for discount ~ 0.99)
 system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
@@ -219,7 +218,10 @@ system.time(
 We can read the stored solution from the log:
 
 ```{r}
-meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% left_join(meta) %>% arrange(scenario)
+meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% 
+  mutate(scenario = as.character(scenario)) %>%
+  left_join(meta) %>% 
+  arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
@@ -444,3 +446,15 @@ pomdp_policies %>%
   geom_line()  + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
 ```
+
+
+```{r}
+pomdp_policies %>% 
+  ggplot(aes(state, escapement, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+
+
+
