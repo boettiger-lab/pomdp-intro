@@ -1,7 +1,7 @@
 POMDP comparisons across sigma\_m, sigma\_g
 ================
 Carl Boettiger
-2017-12-21
+2017-12-28
 
 ``` r
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
@@ -105,8 +105,8 @@ POMDP Model
 We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values:
 
 ``` r
-meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.2), 
-                    sigma_m = c(0, 0.1, 0.2),
+meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.15), 
+                    sigma_m = c(0, 0.1, 0.15),
                     stringsAsFactors = FALSE) %>%
         mutate(scenario  = as.character(1:length(sigma_m)))
 log_dir <- "appendix_alphas" # Store the computed solution files here
@@ -114,15 +114,15 @@ meta
 ```
 
       sigma_g sigma_m scenario
-    1    0.02     0.0        1
-    2    0.10     0.0        2
-    3    0.20     0.0        3
-    4    0.02     0.1        4
-    5    0.10     0.1        5
-    6    0.20     0.1        6
-    7    0.02     0.2        7
-    8    0.10     0.2        8
-    9    0.20     0.2        9
+    1    0.02    0.00        1
+    2    0.10    0.00        2
+    3    0.15    0.00        3
+    4    0.02    0.10        4
+    5    0.10    0.10        5
+    6    0.15    0.10        6
+    7    0.02    0.15        7
+    8    0.10    0.15        8
+    9    0.15    0.15        9
 
 ``` r
 models <- 
@@ -149,6 +149,7 @@ Because this solution is computationally somewhat intensive, be sure to have ~ 4
 
 ``` r
 dir.create(log_dir)
+options(mc.cores=2)
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
 system.time(
@@ -168,7 +169,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 0.00000002,
-             timeout = 10000,
+             timeout = 20000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -178,7 +179,9 @@ system.time(
 We can read the stored solution from the log:
 
 ``` r
-meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% left_join(meta) %>% arrange(scenario)
+meta <- meta_from_log(data.frame(model="gs"), log_dir) %>% 
+  mutate(scenario = as.character(scenario)) %>%
+  left_join(meta) %>% arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 ```
 
@@ -246,18 +249,19 @@ sims %>%
 Policy plots
 ------------
 
-Note that when recruitment occurs before harvest, *f*(*x*)−*h*, to get to *X*<sub>*t*</sub> = *B*<sub>*M**S**Y*</sub> as fast as possible, we actually want to harvest a little bit when X is below *B*<sub>*M**S**Y*</sub>, so that rather than over-shooting *B*<sub>*M**S**Y*</sub> (deterministic) recruitment would land us right at it *B*<sub>*M**S**Y*</sub>. This corresponds to constant escapement. The discrete grid makes these appear slightly stepped.
-
-Note that the deterministic solution crosses the MSY solution at an observed value of *B*<sub>*M**S**Y*</sub> (i.e. *K*/2 = 0.5). PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.
-
 ``` r
 policy_table <- tibble(state = 1:length(states)) %>%
   bind_cols(policies) %>%
   gather(policy, harvest, -state) %>%
-  mutate(harvest = actions[harvest], state = states[state])
+  mutate(harvest = actions[harvest], state = states[state]) %>%
+  mutate(escapement = f(state,harvest))
 
 write_csv(policy_table, "appendix_files/policy_table.csv")
 ```
+
+Note that when recruitment occurs before harvest, *f*(*x*)−*h*, to get to *X*<sub>*t*</sub> = *B*<sub>*M**S**Y*</sub> as fast as possible, we actually want to harvest a little bit when X is below *B*<sub>*M**S**Y*</sub>, so that rather than over-shooting *B*<sub>*M**S**Y*</sub> (deterministic) recruitment would land us right at it *B*<sub>*M**S**Y*</sub>. This corresponds to constant escapement. The discrete grid makes these appear slightly stepped.
+
+Note that the deterministic solution crosses the MSY solution at an observed value of *B*<sub>*M**S**Y*</sub> (i.e. *K*/2 = 0.5). PGY harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, PGY and MSY solutions never go to zero.
 
 ``` r
 policy_table %>% 
@@ -268,11 +272,12 @@ policy_table %>%
 
 ![](appendix_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
-Note that when recruitment happens before harvest, escapement is *f*(*x*<sub>*t*</sub>)−*h*<sub>*t*</sub>, not *x*<sub>*t*</sub> − *h*<sub>*t*</sub>. The effect of a continuous function map *f* on a discrete grid is also visible as slight wiggles.
+Note that when recruitment happens before harvest, escapement is *f*(*x*<sub>*t*</sub>)−*h*<sub>*t*</sub>, not *x*<sub>*t*</sub> − *h*<sub>*t*</sub>. The effect of a continuous function map *f* on a discrete grid is also visible as slight wiggles when we plot in terms of escapement instead of harvest (as is common in the optimal control literature in fisheries, e.g. @Sethi2005).
+
+Note that under the optimal solution, escapement is effectively constant at *B*<sub>*M**S**Y*</sub> = 0.5: for all states above a certain size the population is harvested back down to that size. Note that even stocks observed at states slightly below *B*<sub>*M**S**Y*</sub> = 0.5 achieve this target escapement, since we are following the classic Graham Shaeffer formulation here where we observe first, then recruitment happens before harvest, and thus we see the population at smaller size than we harvest it. In classical escapement analysis, observations are usually indexed instead to occur immediately before harvests, and this inflection point occurs right at *B*<sub>*M**S**Y*</sub>.
 
 ``` r
-policy_table  %>%
-  mutate(escapement = f(state,harvest))  %>% 
+policy_table   %>% 
   ggplot(aes(state, escapement, col=policy)) + 
   geom_line() + 
   coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
@@ -280,13 +285,120 @@ policy_table  %>%
 
 ![](appendix_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
-### Adding the POMDP policy solution
+### Policies under uncertainty
 
-Historical data estimation
---------------------------
+In strategies whose policies are shown in the above plots all ignore both stochasticity and measurement error. If want to compare these to an MDP or POMDP policy, we must specify the level of uncertainty.
 
-Historical data POMDP & other solutions
----------------------------------------
+In the absence of measurement uncertainty this is straight forward. @Reed1979 essentially tells us that for small growth noise (satisfying or approximately satisfying Reed's self-sustaining condition) that the stochastic optimal policy is equal to the deterministic optimal policy. We can confirm this numerically as follows.
 
-Historical combined plot
-------------------------
+First we grab the transition matrix we have already defined for small `sigma_g`:
+
+``` r
+i <- meta %>% filter(sigma_g == 0.02, sigma_m ==0) %>% pull(scenario) %>% as.integer()
+m <- models[[i]]
+```
+
+With no observation uncertainty, we can solve numerically for the optimal policy with stochastic dynamic programming
+
+``` r
+mdp <- MDPtoolbox::mdp_policy_iteration(m$transition, m$reward, discount) 
+```
+
+Adding this to the plot we see the result is identical to the deterministic case:
+
+``` r
+bind_rows(policy_table,
+  data.frame(state = states, 
+             policy = "sdp 0.02",
+             harvest = actions[mdp$policy],
+             stringsAsFactors = FALSE) %>%
+  mutate(escapement = f(state,harvest))) %>% 
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+![](appendix_files/figure-markdown_github/unnamed-chunk-21-1.png)
+
+Repeating this for larger stochasticity, we get a slightly more conservative result:
+
+``` r
+i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0) %>% pull(scenario) %>% as.integer()
+m <- models[[i]]
+mdp <- MDPtoolbox::mdp_policy_iteration(m$transition, m$reward, discount) 
+```
+
+``` r
+bind_rows(policy_table,
+  data.frame(state = states, 
+             policy = "sdp 0.1",
+             harvest = actions[mdp$policy],
+             stringsAsFactors = FALSE)) %>% 
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+![](appendix_files/figure-markdown_github/unnamed-chunk-23-1.png)
+
+### Comparing POMDP Policies
+
+The comparison of POMDP policy is yet more complicated, but the POMDP policy cannot be expressed merely in terms of a target harvest (or escapement) level given an estimation of the stock size (state). The optimal solution for the partially observed system must also reflect all prior observations of the system, not merely the most recent observation, as the system is not Markovian in the observed state variable. We summarize this history as a prior "belief"" about the state, which is updated according to Bayes rule after each observation. (Note that @Sethi2005 fails to realize this and plots solutions with measurement uncertainty without reference to the prior, which explains their counter-intuitive finding that increased uncertainty should result in increased harvest rates).
+
+Let us look at the POMDP solutions under various priors focusing on the case of moderate uncertainty, *σ*<sub>*g*</sub> = *σ*<sub>*m*</sub> = 0.1. (Recall we have already solved the POMDP solution for this model in the simulations above, as defined by the `alpha` vectors, so we can quickly load that solution now.)
+
+``` r
+i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0.1) %>% pull(scenario) %>% as.integer()
+m <- models[[i]]
+alpha <- alphas[[i]] # we need the corresponding alpha vectors
+```
+
+We will consider what the POMDP solution looks like under a few different prior beliefs. A uniform prior sounds like a conservative assumption, but it is not: it puts significantly more weight on improbably large stock values than other priors. (Loading the *α* vectors from our POMDP solution computed earlier, we can then compute a POMDP given these *α*, the matrices for transition, observation, and reward, and the prior we are using)
+
+``` r
+unif_prior = rep(1, length(states)) / length(states) # initial belief
+unif <- compute_policy(alpha, m$transition, m$observation, m$reward,  unif_prior)
+```
+
+For more realistic set of priors, we will consider priors centered at the target *B*<sub>*M**S**Y*</sub> size (or *S*<sup>\*</sup> in the language of Reed), at half *B*<sub>*M**S**Y*</sub>, and at 1.5 times *B*<sub>*M**S**Y*</sub>, each with a standard deviation of *σ*<sub>*m*</sub> = 0.1 (i.e. the uncertainty around a single observation of a stock at that size.)
+
+``` r
+i_star <- which.min(abs(states - S_star))
+i_low <- which.min(abs(states - 0.5 * S_star))
+i_high <- which.min(abs(states - 1.5 * S_star))
+
+prior_star <- m$observation[,i_star,1]
+prior_low <- m$observation[,i_low,1]
+prior_high <- m$observation[,i_high,1] 
+
+star <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_star)
+low <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_low)
+high <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_high)
+```
+
+We gather these solutions into a single data frame and convert from grid indices to continuous values
+
+``` r
+df <- unif
+df$medium <- star$policy
+df$low <- low$policy
+df$high <- high$policy
+
+pomdp_policies <- df %>% 
+  select(-value) %>% 
+  rename(uniform = policy) %>% 
+  gather(policy, harvest, -state) %>%
+  mutate(state = states[state], 
+         harvest = actions[harvest]) %>%
+  mutate(escapement = f(state,harvest)) %>%
+  select(state, policy, harvest, escapement)
+```
+
+``` r
+pomdp_policies %>% 
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line()  + 
+  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+```
+
+![](appendix_files/figure-markdown_github/unnamed-chunk-28-1.png)

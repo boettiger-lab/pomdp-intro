@@ -1,9 +1,0 @@
-
-Loading the model ...
-  input file   : /global/home/users/cboettig/pomdp-intro/appendix/appendix_alphas/17bb73f4badc.pomdpx
-  loading time : 3.94s 
-
-SARSOP initializing ...
-
-failed to reach desired eps of 1e-10 after 1000000 iterations
-residual = 0.0186714
