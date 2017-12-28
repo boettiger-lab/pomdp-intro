@@ -8,81 +8,34 @@ output:
 ---
 
 
-```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
-devtools::install("..")
+```{r message=FALSE}
+# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
+library(sarsop)       # the main POMDP package
+library(tidyverse)    # for munging and plotting
+library(parallel)
+
+ggplot2::theme_set(theme_bw())
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+
+options(mc.cores=parallel::detectCores())
+```
+
+```{r suggested_libs, include=FALSE, eval=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, dev="CairoPDF", fig.width=7, fig.height=7)
-library(tidyverse)
+devtools::install("..", dep=TRUE)
 library(gridExtra)
 library(ggthemes)
 colours <- ptol_pal()(2)
-```
-
-```{r suggested_libs}
 library(hrbrthemes)
 library(extrafont)
 ##extrafont::font_import(prompt=FALSE)    # One-time use to set up fonts, can be slow.
 hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
 extrafont::loadfonts()
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
-#ggplot2::theme_set(theme_bw()) # simpler theme if you do not have these fonts
 ```
 
 
-```{r helper_routines, include = FALSE}
-## map cts values to nearest grid indices 
-index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
 
-
-det_simulations <- function(x0 = 1/6, Tmax = 20, 
-                              B_MSY = K / 2, 
-                              F_MSY = r / 2 , 
-                              F_PGY = 0.8 * F_MSY){
-  
-  msy_policy <- function(x) F_MSY * x
-  pgy_policy <- function(x) F_PGY * x
-  det_policy <- function(x) pmax(f(x,0) - B_MSY,0) ## ASSUMES harvest takes place *after* recruitment
-  reed_policy  <- function(x) pmax(x - B_MSY,0) ## Optimal when harvest takes place *before* recruitment, assumes we are seeing a pre-harvest size.
-  ## consequently, if we use such a policy when we are seeing a the post-harvest size, we give too much buffer.  
-  
-  # a simulation function
-  det_sim <- function(policy, f, x0, Tmax){
-    action <- state <- obs <- as.numeric(rep(NA,Tmax))
-    state[1] <- x0
-    for(t in 1:(Tmax-1)){
-      obs[t] <- state[t]
-      
-      action[t] <- policy(obs[t])
-      state[t+1] <- f(state[t], action[t]) 
-    }
-    data.frame(time = 1:Tmax, state, action, obs)
-  }
-  
-  # simulate each policy, returning all results in a single unified data frame 
-  sims <- 
-    list(msy = msy_policy, 
-         det = det_policy, 
-         pgy = pgy_policy
-         #opt = reed_policy
-         ) %>% 
-    map_df(det_sim, 
-           f, x0, Tmax, 
-           .id = "method") 
-
-  sims
-}
-```
-
-
-```{r message=FALSE}
-# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
-library(sarsop)       # the main POMDP package
-library(tidyverse)    # for munging and plotting
-library(parallel)
-```
-
-```{r}
-options(mc.cores=parallel::detectCores())
-```
 
 
 
@@ -144,6 +97,36 @@ if(discount == 1){
 
 As a basic reference point, simulate these three policies in a purely deterministic world.  Unlike later simulations, here we consider all states an actions exactly (that is, within floating point precision).  Later, states and actions are limited to a discrete set, so solutions can depend on resolution and extent of that discretization. 
 
+```{r helper_routines}
+## map cts values to nearest grid indices 
+
+det_simulations <- function(x0 = 1/6, Tmax = 20, 
+                              B_MSY = K / 2, 
+                              F_MSY = r / 2 , 
+                              F_PGY = 0.8 * F_MSY){
+  msy_policy <- function(x) F_MSY * x
+  pgy_policy <- function(x) F_PGY * x
+  det_policy <- function(x) pmax(f(x,0) - B_MSY,0) ## ASSUMES harvest takes place *after* recruitment
+
+  det_sim <- function(policy, f, x0, Tmax){
+    action <- state <- obs <- as.numeric(rep(NA,Tmax))
+    state[1] <- x0
+    for(t in 1:(Tmax-1)){
+      obs[t] <- state[t]
+      action[t] <- policy(obs[t])
+      state[t+1] <- f(state[t], action[t]) 
+    }
+    data.frame(time = 1:Tmax, state, action, obs)
+  }
+  
+  # simulate each policy, returning all results in a single unified data frame 
+  list(msy = msy_policy, det = det_policy, pgy = pgy_policy) %>% 
+    map_df(det_sim, f, x0, Tmax, .id = "method") 
+}
+```
+
+
+
 ```{r}
 det_simulations(x0 = 1/6, Tmax = 20, B_MSY, F_MSY, F_PGY) %>%
   ggplot(aes(time, state, col=method)) + 
@@ -169,7 +152,8 @@ We compute the above policies on this grid for later comparison.
 
 
 ```{r}
-
+# map to grid
+index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
 
 policies <- data.frame(
   det = index(pmax(f(states,0) - S_star,0), actions), # assumes obs->recruit->harvest, f(x_t) - h_t
