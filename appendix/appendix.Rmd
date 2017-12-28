@@ -55,7 +55,7 @@ Utility (reward) function:
 
 ```{r}
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 0.99
+discount <- 0.95
 ```
 
 
@@ -226,7 +226,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 0.00000002,
-             timeout = 60000,
+             timeout = 15000,
              log_dir = log_dir,
              log_data = log_data)
     })

@@ -180,7 +180,7 @@ gs <- function(r,K){
   }
 }
 reward_fn <- function(x,h) pmin(x,h)
-discount <- .99
+discount <- .95
 ```
 
 
