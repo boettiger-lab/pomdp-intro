@@ -9,6 +9,7 @@ output:
 
 
 ```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
+devtools::install("..")
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, dev="CairoPDF", fig.width=7, fig.height=7)
 library(tidyverse)
 library(gridExtra)
@@ -219,9 +220,9 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 dir.create(log_dir)
-options(mc.cores=2)
+options(mc.cores=9)
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
 system.time(
@@ -241,7 +242,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 0.00000002,
-             timeout = 20000,
+             timeout = 60000,
              log_dir = log_dir,
              log_data = log_data)
     })
