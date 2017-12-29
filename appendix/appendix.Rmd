@@ -55,7 +55,7 @@ Utility (reward) function:
 
 ```{r}
 reward_fn <- function(x,h) pmin(x,h)
-discount <- 0.99
+discount <- 0.95
 ```
 
 
@@ -203,10 +203,13 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
+```{r}
+options(mc.cores=1)
+```
 
-```{r eval=TRUE}
+
+```{r eval=FALSE}
 dir.create(log_dir)
-options(mc.cores=9)
 
 ## POMDP solution (slow, >10,000 seconds per scenario, & memory intensive)
 system.time(
@@ -226,7 +229,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 0.00000002,
-             timeout = 60000,
+             timeout = 25000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -251,6 +254,7 @@ Tmax <- 100
 x0 <- which.min(abs(K/6 - states))
 reps <- 100
 
+set.seed(12345)
 static_sims <- 
  map_dfr(models, function(m){
             do_sim <- function(policy) sim_pomdp(
@@ -266,8 +270,10 @@ static_sims <-
 ```{r pomdp_sims}
 # slower!
 unif_prior <- rep(1, length(states)) / length(states)
+set.seed(12345)
+
 pomdp_sims <- 
-  map2_dfr(models, alphas, function(.x, .y){
+  map2_dfr(models[as.integer(meta$scenario)], alphas, function(.x, .y){
              sim_pomdp(.x$transition, .x$observation, .x$reward, discount, 
                        unif_prior, x0 = x0, Tmax = Tmax, alpha = .y,
                        reps = reps)$df %>% 
@@ -382,7 +388,7 @@ bind_rows(policy_table,
 Repeating this for larger stochasticity, we get a slightly more conservative result:
 
 ```{r}
-i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0) %>% pull(scenario) %>% as.integer()
+i <- meta %>% filter(sigma_g == 0.15, sigma_m ==0) %>% pull(scenario) %>% as.integer()
 m <- models[[i]]
 mdp <- MDPtoolbox::mdp_policy_iteration(m$transition, m$reward, discount) 
 ```
@@ -391,7 +397,7 @@ mdp <- MDPtoolbox::mdp_policy_iteration(m$transition, m$reward, discount)
 ```{r}
 bind_rows(policy_table,
   data.frame(state = states, 
-             policy = "sdp 0.1",
+             policy = "sdp 0.15",
              harvest = actions[mdp$policy],
              stringsAsFactors = FALSE)) %>% 
   ggplot(aes(state, harvest, col=policy)) + 
