@@ -41,10 +41,10 @@ berkeley_colors <- c("#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#
 
 ```{r suggested_libs}
 library(hrbrthemes)
-#library(extrafont)
-##extrafont::font_import(prompt=FALSE)    # One-time use to set up fonts, can be slow.
-#extrafont::loadfonts()
-hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
+library(ggplot2)
+library(Cairo)
+library(extrafont)
+extrafont::loadfonts()
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
 ```
 
@@ -165,13 +165,14 @@ all_policies <- read_csv(file.path(log_dir, "all_policies.csv"))
 all_policies %>% 
   filter(policy %in% c("low", "medium", "det", "msy")) %>%
   mutate(policy = fct_recode(policy,
-                             "MSY" = "msy",
                              "Constant escapement" = "det",
+                              "MSY" = "msy",
                              "POMDP: low prior" = "low",
                              "POMDP: medium prior" = "medium"
                              )) %>%
   ggplot(aes(state, harvest, col=policy)) + 
-  geom_line(lwd=1)  + 
+  geom_line(lwd=1)  +
+  scale_color_manual(values = c("black", berkeley_colors) ) +
   coord_cartesian(xlim = c(0,1), ylim = c(0, .8))
 ```
 
@@ -184,7 +185,7 @@ all_policies %>%
 
 ```{r eval=FALSE}
 sims %>%
-  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
+  filter(model %in% c("biomass", "catch", "POMDP", "Reed")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
   scale_color_manual(values = c("black", "grey", berkeley_colors) ) +
