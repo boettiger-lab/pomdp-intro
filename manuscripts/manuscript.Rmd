@@ -24,6 +24,7 @@ keywords:
 lineno: true
 
 bibliography: citations.bib
+csl: the-american-naturalist.csl
 output: rticles::elsevier_article
 layout: 3p # review # review = doublespace, 3p = singlespace, 5p = two-column
 
@@ -56,12 +57,12 @@ Imperfect information is ubiquitous in ecological management and conservation de
 
 Approaches for decision making under uncertainty in ecological systems can be divided into two camps: approaches based in "optimal control" and usually favored by natural resource economists, and approaches based in heuristic methods such as scenario planning, resilience thinking, and precautionary rules of thumb, more commonly found in both ecological literature and actual practice [@Fischer2009; @Polasky2011].  While researchers have for some time recognized the need to unify the transparent and quantitative algorithmic approach of optimal control with the greater complexity and uncertainty of real ecosystems that is acknolwedged by heuristic methods, computational barriers to doing so have hither-to stymied this progress.  Here, we illustrate how the limitations of these approaches has been manifested in the example of fisheries management, and present a new approach that can combine the reality of measurement uncertainty and the rigour of optimization to resolve a long-standing paradox and suggest a more robust approach to management.   
 
-Fisheries conservation and management has long been both a crucible and proving ground for the theory of ecological management more generally, including topics such as adaptive management [@Walters1978], ecosystem-based management [@Levin2008] and resilience thinking [@Holling1973; @May1977], while also giving rise to the sub-discipline of resource economics [@Beverton1957; @Schaefer1957], thanks to its global relevance, long history, and readily available data.  Consequently, understanding the impact of measurement uncertainty in this rich and well-studied context will have implications for both resource management and conservation efforts in other domains, many of which draw on concepts established or tested in fisheries ecosystems.  In particular, the approach here illustrates the limitations of both over-simple optimal control approaches and rule-of-thumb precautionary approaches, and offers instead a more general strategy for dealing with measurement uncertainty adaptively.  
+Fisheries conservation and management has long been both a crucible and proving ground for the theory of ecological management more generally, including topics such as adaptive management [@Walters1978], ecosystem-based management [@Levin2008] and resilience thinking [@Holling1973; @May1977], while also giving rise to the sub-discipline of resource economics [@Beverton1957; @Schaefer1954; @Gordon1954], thanks to its global relevance, long history, and readily available data.  Consequently, understanding the impact of measurement uncertainty in this rich and well-studied context will have implications for both resource management and conservation efforts in other domains, many of which draw on concepts established or tested in fisheries ecosystems.  In particular, the approach here illustrates the limitations of both over-simple optimal control approaches and rule-of-thumb precautionary approaches, and offers instead a more general strategy for dealing with measurement uncertainty adaptively.  
 
 
 We compare the results of managing simulated fish stocks under the existing optimal control approach, a heuristic approach that more closely resembles today's management practices, and a newly proposed approach that provides a more rigorous treatment of uncertainty.
 
-## Model
+# Model
 
 We consider the management problem of setting catch quotas for a marine fishery in the face of imperfect information about the current stock size and uncertainty about future recruitment.  To facilitate tractability and intepretation, we will focus on the well-studied Gordon-Schaefer model [@Schaefer1974; @Gordon1974] of logistic population growth (stock recruitment),  
 
@@ -73,22 +74,24 @@ This and similar models are widely used in large scale analyses across diverse s
 
 However, it is important to remember that both existing methods we discuss and the POMDP approach proposed here can or are already applied to more complex models as well, including those with age or stage structure.  Likewise, while we consider the model and it's parameters as "given," it should be understood to mean that this in practice comes as the result of some model choice and statistical estimation from historical data, frequently accounting for uncertainty in both the process and the measurements [e.g. @].  As we shall see here, having included uncertainty in the model *estimation* in no way excuses us from having to also deal once again with that uncertainty in the decision process.  
 
-## The decision problem
+# The Decision Problem
 
-We seek to determine the sequence of actions $h_t$ for $t \in [1, ... \infty]$ that maximize the net present value (discounted sum of all future profits) of the fishery.  We will denote the discount rate $\delta$. For simplicity we will once again follow classic theory and assume a fixed price for fish, (equivalently, measuring our value in units of discounted fish rather than discounted dollars), though again this assumption is easy to relax. Each year, the manager also obtains an estimate $y_t$ of the true $x_t$ stock size,
+We seek to determine the sequence of actions $h_t$ for $t \in [1, ... \infty]$ that maximize the net present value (discounted sum of all future profits) of the fishery.  We will denote the discount rate $\gamma$. For simplicity we will once again follow classic theory and assume a fixed price for fish, (equivalently, measuring our value in units of discounted fish rather than discounted dollars), though again this assumption is easy to relax. Each year, the manager also obtains an estimate $y_t$ of the true $x_t$ stock size,
 
 $$y_t = \xi_t x_t$$
 
 Given an estimated recruitment model along with this measurement of the stock size, the manager must set a harvest quota $h_t$ for that year in order to maximize their expected long term (net) present value:
 
-$$\max_{ \lbrace h_t \rbrace} \sum_{t=0}^{\infty} \delta x_t $$
+$$\max_{ \lbrace h_t \rbrace} \mathbb{E} \left \{ \sum_{t=0}^{\infty} \gamma^t \cdot h_t \right \}$$
 
 A few subtlies arise in this seemlingly simple problem statement that we must address.  First, given our discrete-time formulation of the recruitment process, it is necessary to decide if the measurement $y_t$ happens before or after harvest $h_t$: that is do we: measure, recruit, harvest, or measure, harvest, recruit?  Following convention in the optimal control literature (e.g. [@Reed1979; @Clark1990; @Sethi2005]), we will assume the latter; measurement occurs immediately before harvest, followed by recruitment. 
 
 A second subtly is in the nature of the decision problem itself: the optimization problem must always consider the set ${h_t}$ all future actions simultaneously, not merely the next action.  This is a game of chess, where it can be optimal to make costly short term actions (such as closing the fishery) if they pay off in the long run. This differs from the problem solved in theory as well as the practice of maximum sustainable yield, which seeks to identify only a single harvest quota $H_{MSY}$ applied for all time, rather than a *policy* of varying quotas $h_t$ depending on the stock assessment $y_t$.  Understanding this distinction is key both to understanding the differences between current theory and current best practice in fisheries management.
 
 
-## Current theory and current practice
+<!-- MDP, POMDP -->
+
+# Current theory and practice
 
 @Gordon1954 and @Schaefer1954 independently showed in the same year that the maximum sustainable yield for the model bearing their names is achieved by reducing the stock to the  population to the size at which it obtains the maximum growth rate which is known as Biomass at Maximum Sustainable Yield, $B_{MSY}$. For the Gordon-Schaefer model (and many others), this is achieved at $B_{MSY} = K/2$.  They observed that fishing at a *constant yield* (that is, an individual fish mortality, $F$, such that harvest $H = F \cdot B$) of $F_{MSY} := \tfrac{H_{MSY}}{B_{MSY}}$)  will eventually lead to a population that converges to the biomass $B_{MSY}$ and produces the maximum sustainable harvest, $H_{MSY} = r K / 4$ in this model.
 From here, theory and practice diverge.  
@@ -96,15 +99,15 @@ From here, theory and practice diverge.
 This *constant yield* (constant mortality) solution thus corresponds to an equlibrium analysis, and does not solve the time-dependent optimization problem above. In particular, maximum sustainable yield will not be optimal whenever the stock is away from $B_{MSY}$.  @Clark1973 shows that the optimal time-dependent strategy is not one of constant yield, but rather of *constant escapement*. The time-depednent optimal stategy is impatient: it seeks to achieve the optimal yield as quickly as possible.  Thus, at any level below $B_{MSY}$, the economically optimal thing to do is to completely shut down the fishery, while above this stock, mortalities greater than $F_{MSY}$ can be optimal to bring the stock back to $B_{MSY}$ more quickly.  (This intution must be adjusted slightly in the case of economic discounting of future profits, but is otherwise quite general, see @Clark1990).  This strategy is known as constant escapement, since a constant sock size $B_{MSY}$ escapes harvest each year.  While both converge to the same long-term biomass and long-term yield, these differences away from equilibrium between the mortality-based approach that dominates fisheries management practice and the escapement-based approach that became the focus of theory will result in different behaviors under uncertainty.
 
 
-## Pardoxes of uncertainty
+
 
 The literature of optimal harvests under uncertainty is one of paradoxes, which can only be resolved by a more comprehensive treatment of measurement uncertainty.  
 
-### Reed's Paradox: $S = D$
+## Reed's Paradox: $S = D$
 
 The first of these we shall refer to as Reed's Paradox, owing to the mathematical proof provided in @Reed1979 which demonstrates that, under sufficiently general assumptions, the optimal escapement $S$ for a population under stochastic growth, is identical to the optimal escapement $D$ of a deterministic population, $S = D = B_{MSY}$.  This suprising result suggests that in going from a world where a manager has perfect knowledge of absolutely everything into a scenario where the manager faces considerable uncertainty about the future state of the world, no additional precaution is needed.  This also provides the manager with a remarkably convenient mechanism for determining the optimal harvest policy: rather than rely on computationally intensive Stochastic Dynamic Programming to determine the optimal policy, a simple derivative will suffice, which is all that is needed to solve the maximum of the deterministic problem.  
 
-### Clark's Paradox: $M < D$
+## Clark's Paradox: $M < D$
 
 @Clark1986 was among the first attempts to resolve Reed's Paradox. @Clark1986 (quite correctly, as we will see), identified the crux of Reed's Paradox as the absence of measurement uncertainty:
 
@@ -114,20 +117,26 @@ to above, is that the recruitment level X is known accurately prior to the harve
 Unfortunately, @Clark1986 was unable to solve the resulting problem exactly, but had to adopt an almost equally troublesome assumption:
 
 > For reasons of tractability, we shall adopt the simplifying assumption that the escapement level S, is known exactly at the end of that period. (The mathematical difficulty
-of the problem increases markedly if this assumption is
-relaxed.) 
+of the problem increases markedly if this assumption is relaxed.) 
 
-The resulting solutions only deepened the paradox, rather than recovering a more cautious policy in response to the uncertainty, @Clark1986 finds policies that are often *less* cautious:
+By leveraging algorithms (and also computational hardware) developed over two decades later are we able to crack this mathematical difficulty Clark refers to directly without this "simplyfying assumption."  Unforunately for @Clark1986, this "simplifying assumption" they made instead only deepened the paradox, leading them to find policies that become *less* cautious as uncertainty increases:
 
 > [Our] results appear to contradict the conventional wisdom of renewable resource management, under which high uncertainty would call for increased caution in the setting of quotas.
 
-Using different but still implicitly approximate results nearly two decades later, @Sethi2005 largely confirm Clark's Paradox, which they likewise observe with some concern:
+Using a different but still flawed assumption nearly two decades later, @Sethi2005 largely confirm Clark's Paradox, which they likewise observed with some concern:
 
 > It may seem counter-intuitive that a measurement error causes lower expected escapements below the deterministic fishery closure threshold.
 
-While other attempts to introduce measurement error have been considered, each relies on various approximations that similarly alter the problem, such as assuming the solution must be of 'constant-escapement' type [@Ludwig1981; @Roughgarden1996; @Engen1997;  @Moxnes2003].  Here we will illustrate the use of powerful modern algorithms that will permit a more direct solution to the case of measurement uncertainty.  First we will introduce the more heuristic alternative to addressing uncertainty, which more accurately reflects both intuition and actual management.  
+While other attempts to introduce measurement error have been considered, each relies on various approximations that similarly alter the problem, such as assuming the solution must be of 'constant-escapement' type [@Ludwig1981; @Roughgarden1996; @Engen1997;  @Moxnes2003].  Here we will illustrate the use of powerful modern algorithms that will permit a more direct solution to the case of measurement uncertainty.  
 
-## Uncertainty in practice
+
+
+
+
+
+First we will introduce the more heuristic alternative to addressing uncertainty, which more accurately reflects both intuition and actual management.  
+
+## Uncertainty in Practice
 
 Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas.  Instead, most well-managaged fisheries operate on rules that are more the result of common sense than mathematical optimization.  While details differ, the basic approach can be thought of as starting with the deterministic notion of $B_{MSY}$ and corresponding optimal fishing level $F_{MSY}$ as a way of determining an Overfishing Limit, (OFL), which is then adjusted to some lower level, Allowable Biological Catch (ABC) to reflect uncertainty in the stock assessment.  ABC is then adjusted lower once again, to determine a Total Allowable Catch, (TAC), reflecting uncertainty in reported catch or other uncertainty.  To capture this process, we will consider a policy in which the harvest quota is set at a TAC of 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. We will refer to both MSY policies and this more cautious adjustment of the MSY policy as "constant mortality" policies, since they are defined by a constant fishing mortality, $F$, rather than by a constant escapement, $S$.  
 
@@ -146,16 +155,13 @@ As discussed above, absent the short-cut provided by Reed's theorems -- solving 
 The optimization problem is to select the action $a_t$ that will maximize the net present utility over all time. Future utility may be discounted by a factor $\gamma$, so that a value  $V$ in $t$ year is valued at $\gamma^t V$ today.  
 
 
-Numerically, each of these functions are defined over a discrete set of possible states, observations, and actions, and can thus be represented as a collection of matrices or tensors.  As in the case of MDP [@Marescot2013], the POMDP problem can be solved by existing and well-studied algorithms. While not unknown to the conservation literature [@Williams2011], algorithms for POMDP have historically scaled quite poorly, and their application has been restricted to contexts with only a handful of possible states and actions [e.g. @Chades2008; @Chades2011; @Fackler2014; @Fackler2014b].  POMDP algorithms remain a very active area in artificial intellegence, and by adapting recent algorithmic developments [@Kurniawati2008] from that field we are able to find solutions for the considerably more complex problems such as the case of fisheries managment, which requires on the order of 100 states and actions to provide sufficient numerical resolution. Readers interested in the technical details of these algorithms should consult the extensive literature in in POMDP methods. For those interested in exploring or applying these methods, we have developed a preliminary R package, @sarsop-pkg, which can be used to replicate any of the results presented here and explore other variations.  
+Numerically, each of these functions are defined over a discrete set of possible states, observations, and actions, and can thus be represented as a collection of matrices or tensors.  As in the case of MDP [@Marescot2013], the POMDP problem can be solved by existing and well-studied algorithms. While not unknown to the conservation literature [@Williams2011], algorithms for POMDP have historically scaled quite poorly, and their application has been restricted to contexts with only a handful of possible states and actions [e.g. @Chades2008; @Chades2011; @Fackler2014; @Fackler2014b].  POMDP algorithms remain a very active area in artificial intellegence, and by adapting recent algorithmic developments [@Kurniawati2008] from that field we are able to find solutions for the considerably more complex problems such as the case of fisheries managment, which requires on the order of 100 states and actions to provide sufficient numerical resolution. Readers interested in the technical details of these algorithms should consult the extensive literature in in POMDP methods. For those interested in exploring or applying these methods, we have developed a preliminary R package [@sarsop-pkg], which can be used to replicate any of the results presented here and explore other variations.  
 
-## Results 
+# Results 
 
 <!--
 PGY, MSY, Det, MDP (sigma_g), POMDP (sigma_g, sigma_m)
 -->
-
-
-### Replicate simulations 
 
 
 Figure 1 shows average fish biomass 
@@ -201,10 +207,6 @@ all_policies %>%
 
 
 
-### Comparisons to historical data
-
-
-
 
 ```{r eval=FALSE}
 sims %>%
@@ -220,11 +222,11 @@ sims %>%
 The essential difference in a POMDP policy compared to either that of constant escapement $S$ or constant mortality $F$ is that nothing is just a constant -- instead, the harvest quota recommended by POMDP will always depend not only on the most recent observation of the stock size, but on all previous stock sizes.  This dependency can be expressed in terms of a *prior belief* -- if all prior observations have led one to expect that the stock should be relatively small, a single observation of a very large stock is met by some skepticism under a POMDP, and the resulting harvest recommended by POMDP can differ substantially from that recommended by constant escapement or constant mortaility, which by definition consider only the most recent observation.  If the observation is largely consistent with prior expectations, a POMDP policy will be more similar to that of the constant escapement policy, though with a natural level of precaution built in to allow for the possibility of error in measurement coupled with a negative shock to growth.  
 
 
-## Discussion
+# Discussion
 
 Is it surprising that POMDP model should do better?  Recall that Reed found stochasticity to make no difference, the deterministic model performs identically.  
 
-### A practical implementation?
+## A practical implementation?
 
 
 The year-to-year variation in quotas necessary under either a constant escapement policy
