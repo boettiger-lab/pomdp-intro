@@ -35,19 +35,22 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, dev="CairoPDF"
 library(tidyverse)
 library(gridExtra)
 library(ggthemes)
-colours <- ptol_pal()(2)
+colours <- ptol_pal()(4)
+berkeley_colors <- c("#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")
 ```
 
 ```{r suggested_libs}
 library(hrbrthemes)
 library(extrafont)
 ##extrafont::font_import(prompt=FALSE)    # One-time use to set up fonts, can be slow.
-hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
 extrafont::loadfonts()
+hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
-#ggplot2::theme_set(theme_bw()) # simpler theme if you do not have these fonts
 ```
 
+```{r}
+log_dir <- "../data/observe_harvest_recruit" # solution files here
+```
 
 Imperfect information is ubiquitous in ecological management and conservation decision making. While the pressing concerns of global change have put the spotlight on *forecasting*, i.e. the uncertainty of the future [e.g. @Petchy2015], management decisions must also contend with uncertainty of the *present*: How many fish are in the sea today? What regions harbor the most fragile biodiversity? How have invasive species transformed native communities? A recognition of the importance of uncertainty as well as sophisticated methods and tools to do so has become increasingly widespread in the context of estimating ecological models from available data, thanks in large part to the rise of approaches such as Hierachical Bayesian Modeling, along with convenient software tools for implementing these methods.  In sharp contrast to that shift, the treatment of uncertainty in decisions -- how the uncertainty in models should be reflected in scientific recommendations, remains far less developed, more qualitative, and underserved by available tools.  In this paper we illustrate how uncertainty in measurement has a dramatic negative impact on outcomes under a variety of these exsiting approaches, which can be avoided through the use of more formal approaches that have since been developed in other fields that can likewise be implemented in software tools.  This insight both resolves a long-standing paradox in fisheries management and has important implications for how ecosystem management deals with uncertainty more generally.
 
@@ -124,17 +127,53 @@ Numerically, each of these functions are defined over a discrete set of possible
 
 ## Results 
 
+<!--
+PGY, MSY, Det, MDP (sigma_g), POMDP (sigma_g, sigma_m)
+-->
+
 
 ### Replicate simulations 
 
 
+Figure 1 shows average fish biomass 
 
-Moderate / modest sigma_g, sigma_m
+```{r fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement, maximum sustainable yield (MSY), and the porposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels shown in supplement."}
+sims <- read_csv(file.path(log_dir, "sims.csv"), col_types = "inicnn")
+sims %>%
+  filter(method != "pgy", sigma_g == "0.15") %>%
+  mutate(method = fct_recode(method, 
+                             "Constant escapement" = "det",
+                             "MSY" = "msy",
+                             "POMDP" = "pomdp")) %>%
+  group_by(time, method, sigma_m) %>%
+  summarise(mean = mean(state), sd = sd(state)) %>%
+  ggplot(aes(time, mean, col=method, fill=method)) + 
+  geom_line() + 
+  geom_ribbon(aes(ymax = mean + sd, ymin = mean-sd), col = NA, alpha = 0.1) +
+  facet_wrap(~ sigma_m, labeller = label_bquote(sigma[m] == .(sigma_m))) + 
+  coord_cartesian(ylim = c(0, 1)) + 
+  theme(legend.position = "bottom") + 
+  ylab("Mean biomass")
+```
 
-- non-pomdp policies
 
-- pomdp policies
 
+POMDP policies depend on the prior belief.  
+
+```{r}
+all_policies <- read_csv(file.path(log_dir, "all_policies.csv"))
+all_policies %>% 
+  filter(policy %in% c("low", "medium", "det", "msy")) %>%
+  mutate(policy = fct_recode(policy,
+                             "MSY" = "msy",
+                             "Constant escapement" = "det",
+                             "POMDP: low prior" = "low",
+                             "POMDP: medium prior" = "medium"
+                             )) %>%
+  ggplot(aes(state, harvest, col=policy)) + 
+  geom_line(lwd=1)  + 
+  coord_cartesian(xlim = c(0,1), ylim = c(0, .8))
+```
 
 
 
@@ -143,13 +182,12 @@ Moderate / modest sigma_g, sigma_m
 
 
 
-```{r}
-sims <- read_csv("../appendix/appendixB_files/sims.csv")
+```{r eval=FALSE}
 sims %>%
   filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +
+  scale_color_manual(values = c("black", "grey", berkeley_colors) ) +
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
