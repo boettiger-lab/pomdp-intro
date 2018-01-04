@@ -41,9 +41,9 @@ berkeley_colors <- c("#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#
 
 ```{r suggested_libs}
 library(hrbrthemes)
-library(extrafont)
+#library(extrafont)
 ##extrafont::font_import(prompt=FALSE)    # One-time use to set up fonts, can be slow.
-extrafont::loadfonts()
+#extrafont::loadfonts()
 hrbrthemes::import_roboto_condensed()     # One-time use to set up fonts 
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
 ```
