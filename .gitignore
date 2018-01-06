@@ -5,5 +5,5 @@
 *.pomdpx
 *_cache/
 *.tex
-
+*.log
 

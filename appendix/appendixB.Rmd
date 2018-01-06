@@ -229,7 +229,7 @@ models <-
 
 
 
-```{r eval=TRUE}
+```{r eval=FALSE}
 dir.create(log_dir)
 options(mc.cores = 1)
 
@@ -264,14 +264,15 @@ system.time(
 
 
 
-```{r}
+```{r message=FALSE}
 meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
+  mutate(scenario = as.character(scenario)) %>%
   left_join(
     ## use the estimated sigma_m, r, K pars recorded in the logged meta.csv.  Technically
     ## these should be the same as the above, but without random seed re-running the nimble
     ## code but not re-running these can create mis-matches.  
     select(meta, sigma_m, commonname, scenario),   
-    by = c("sigma_m", "commonname")) %>% 
+    by = c("scenario", "sigma_m", "commonname")) %>% 
   arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 #models <- models_from_log(meta)
@@ -361,6 +362,7 @@ historical %>%
 
 
 ```{r}
+set.seed(123456)
 pomdp_sims <- 
   pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
            function(.x, .y, .z){

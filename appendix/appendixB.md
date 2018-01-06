@@ -137,11 +137,10 @@ fits
 
     # A tibble: 2 x 8
     # Groups:   commonname [2]
-          stockid      commonname         r        K   sigma_g       r_sd
-            <chr>           <chr>     <dbl>    <dbl>     <dbl>      <dbl>
-    1 ARGHAKENARG  Argentine hake 1.0387783 1.196112 0.1118370 0.17650455
-    2     PLAICNS European Plaice 0.9055933 1.778186 0.1275455 0.07339706
-    # ... with 2 more variables: K_sd <dbl>, sigma_g_sd <dbl>
+      stockid     commonname          r     K sigma_g   r_sd  K_sd sigma_g_sd
+      <chr>       <chr>           <dbl> <dbl>   <dbl>  <dbl> <dbl>      <dbl>
+    1 ARGHAKENARG Argentine hake  1.04   1.20   0.112 0.177  0.188     0.0263
+    2 PLAICNS     European Plaice 0.906  1.78   0.128 0.0734 0.155     0.0130
 
 <!--
 Do the estimates make sense?  Consider simulation from models, under this historical harvests, compared to historical trajectories
@@ -155,7 +154,7 @@ examples %>% ungroup() %>%
   geom_line() + facet_wrap(~commonname, scales = "free")
 ```
 
-![](appendixB_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 
 -->
@@ -165,10 +164,10 @@ pars
 ```
 
     # A tibble: 2 x 4
-           commonname         r        K   sigma_g
-                <chr>     <dbl>    <dbl>     <dbl>
-    1  Argentine hake 1.0387783 1.196112 0.1118370
-    2 European Plaice 0.9055933 1.778186 0.1275455
+      commonname          r     K sigma_g
+      <chr>           <dbl> <dbl>   <dbl>
+    1 Argentine hake  1.04   1.20   0.112
+    2 European Plaice 0.906  1.78   0.128
 
 ------------------------------------------------------------------------
 
@@ -177,7 +176,7 @@ Decision Policies
 
 ``` r
 options(mc.cores = parallel::detectCores()) # Reserve ~ 10 GB per core
-log_dir <- "pomdp_historical"
+log_dir <- "appendixB_alphas"
 ```
 
 ``` r
@@ -188,7 +187,7 @@ gs <- function(r,K){
   }
 }
 reward_fn <- function(x,h) pmin(x,h)
-discount <- .99
+discount <- .95
 ```
 
 Discretize space
@@ -244,6 +243,7 @@ models <-
 
 ``` r
 dir.create(log_dir)
+options(mc.cores = 1)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
 system.time(
@@ -264,7 +264,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 2e-6,
-             timeout = 20000,
+             timeout = 25000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -273,12 +273,13 @@ system.time(
 
 ``` r
 meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
+  mutate(scenario = as.character(scenario)) %>%
   left_join(
     ## use the estimated sigma_m, r, K pars recorded in the logged meta.csv.  Technically
     ## these should be the same as the above, but without random seed re-running the nimble
     ## code but not re-running these can create mis-matches.  
     select(meta, sigma_m, commonname, scenario),   
-    by = c("sigma_m", "commonname")) %>% 
+    by = c("scenario", "sigma_m", "commonname")) %>% 
   arrange(scenario)
 ```
 
@@ -336,22 +337,20 @@ ex
 ```
 
     # A tibble: 69 x 18
-          scientificname     commonname     stockid           areaname
-                   <chr>          <chr>       <chr>              <chr>
-     1 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     2 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     3 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     4 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     5 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     6 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     7 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     8 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-     9 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-    10 Merluccius hubbsi Argentine hake ARGHAKENARG Northern Argentina
-    # ... with 59 more rows, and 14 more variables: country <chr>, year <dbl>,
-    #   SSB <dbl>, TC <dbl>, scaled_catch <dbl>, scaled_biomass <dbl>,
-    #   biomass <int>, catch <int>, S_star <dbl>, F_MSY <dbl>, F_PGY <dbl>,
-    #   N <dbl>, r <dbl>, K <dbl>
+       scien… commo… stock… arean… coun…  year    SSB     TC scal… scal… biom…
+       <chr>  <chr>  <chr>  <chr>  <chr> <dbl>  <dbl>  <dbl> <dbl> <dbl> <int>
+     1 Merlu… Argen… ARGHA… North… Arge…  1986 481050 196008 0.407 1.00     38
+     2 Merlu… Argen… ARGHA… North… Arge…  1987 378022 194344 0.404 0.786    30
+     3 Merlu… Argen… ARGHA… North… Arge…  1988 203903 117910 0.245 0.424    17
+     4 Merlu… Argen… ARGHA… North… Arge…  1989 236340 146438 0.304 0.491    19
+     5 Merlu… Argen… ARGHA… North… Arge…  1990 255933 135716 0.282 0.532    21
+     6 Merlu… Argen… ARGHA… North… Arge…  1991 280975 221201 0.460 0.584    23
+     7 Merlu… Argen… ARGHA… North… Arge…  1992 225719 202013 0.420 0.469    18
+     8 Merlu… Argen… ARGHA… North… Arge…  1993 158098 152072 0.316 0.329    13
+     9 Merlu… Argen… ARGHA… North… Arge…  1994 166932 140226 0.291 0.347    14
+    10 Merlu… Argen… ARGHA… North… Arge…  1995 206742 186886 0.388 0.430    17
+    # ... with 59 more rows, and 7 more variables: catch <int>, S_star <dbl>,
+    #   F_MSY <dbl>, F_PGY <dbl>, N <dbl>, r <dbl>, K <dbl>
 
 ``` r
 det_f <- function(S_star, r, K, i) index(pmax(gs(r[[1]],K[[1]])(states,0) - S_star[[1]],0), actions)[i]
@@ -382,12 +381,13 @@ historical %>%
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
-![](appendixB_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-23-1.png)
 
 POMDP historical
 ----------------
 
 ``` r
+set.seed(123456)
 pomdp_sims <- 
   pmap_dfr(list(models, alphas, 1:dim(meta)[[1]]), 
            function(.x, .y, .z){
@@ -450,4 +450,4 @@ sims %>%
 
     Warning: Removed 2 rows containing missing values (geom_path).
 
-![](appendixB_files/figure-markdown_github/unnamed-chunk-23-1.png)
+![](appendixB_files/figure-markdown_github/unnamed-chunk-27-1.png)
