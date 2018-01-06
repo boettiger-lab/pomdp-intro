@@ -168,7 +168,7 @@ pars
 
 ```{r}
 options(mc.cores = parallel::detectCores()) # Reserve ~ 10 GB per core
-log_dir <- "pomdp_historical"
+log_dir <- "appendixB_alphas"
 ```
 
 
@@ -180,7 +180,7 @@ gs <- function(r,K){
   }
 }
 reward_fn <- function(x,h) pmin(x,h)
-discount <- .99
+discount <- .95
 ```
 
 
@@ -229,8 +229,9 @@ models <-
 
 
 
-```{r eval=FALSE}
+```{r eval=TRUE}
 dir.create(log_dir)
+options(mc.cores = 1)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
 system.time(
@@ -251,7 +252,7 @@ system.time(
              models[[i]]$reward,
              discount = discount,
              precision = 2e-6,
-             timeout = 20000,
+             timeout = 25000,
              log_dir = log_dir,
              log_data = log_data)
     })
