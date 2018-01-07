@@ -50,7 +50,7 @@ ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
 ```
 
 ```{r}
-log_dir <- "../data/observe_harvest_recruit" # solution files here
+log_dir <- "../data" # solution files here
 ```
 
 Imperfect information is ubiquitous in ecological management and conservation decision making. While the pressing concerns of global change have put the spotlight on *forecasting*, i.e. the uncertainty of the future [e.g. @Petchy2015], management decisions must also contend with uncertainty of the *present*: How many fish are in the sea today? What regions harbor the most fragile biodiversity? How have invasive species transformed native communities? A recognition of the importance of uncertainty as well as sophisticated methods and tools to do so has become increasingly widespread in the context of estimating ecological models from available data, thanks in large part to the rise of approaches such as Hierachical Bayesian Modeling, along with convenient software tools for implementing these methods.  In sharp contrast to that shift, the treatment of uncertainty in decisions -- how the uncertainty in models should be reflected in scientific recommendations, remains far less developed, more qualitative, and underserved by available tools.  In this paper we illustrate how uncertainty in measurement has a dramatic negative impact on outcomes under a variety of these exsiting approaches, which can be avoided through the use of more formal approaches that have since been developed in other fields that can likewise be implemented in software tools.  This insight both resolves a long-standing paradox in fisheries management and has important implications for how ecosystem management deals with uncertainty more generally.
@@ -136,11 +136,11 @@ While other attempts to introduce measurement error have been considered, each r
 
 First we will introduce the more heuristic alternative to addressing uncertainty, which more accurately reflects both intuition and actual management.  
 
-## Uncertainty in Practice
+## Uncertainty in Practice: TAC
 
-Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas.  Instead, most well-managaged fisheries operate on rules that are more the result of common sense than mathematical optimization.  While details differ, the basic approach can be thought of as starting with the deterministic notion of $B_{MSY}$ and corresponding optimal fishing level $F_{MSY}$ as a way of determining an Overfishing Limit, (OFL), which is then adjusted to some lower level, Allowable Biological Catch (ABC) to reflect uncertainty in the stock assessment.  ABC is then adjusted lower once again, to determine a Total Allowable Catch, (TAC), reflecting uncertainty in reported catch or other uncertainty.  To capture this process, we will consider a policy in which the harvest quota is set at a TAC of 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. We will refer to both MSY policies and this more cautious adjustment of the MSY policy as "constant mortality" policies, since they are defined by a constant fishing mortality, $F$, rather than by a constant escapement, $S$.  
+Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas. Maximum Sustainable Yield (MSY) remains the basis of international law (including the UN,  IWC, IATTC ICCAT, ICNAF; @Mace2001) and a familiar standard of management in terrestrial ecosystems as well as aquatic [@Clark1989].  Critics have for some time observed the limitations of harvesting at MSY in face of uncertainty in stock sizes and population dynamics [@Botsford1997].  Many US fisheries reflect this uncertainty through a series of adjustments that effectively reduce the target fishing mortality level to reflect this uncertainty.  Typically, a stock assessment model provides a best estimate of $B_{MSY}$ and corresponding mortality $F_{MSY}$ is used to define the stock Overfishing Limit, (OFL). Based on this, a somewhat lower level is set as the Allowable Biological Catch (ABC), reflecting uncertainty in the stock assessment. To reflect possible uncertainty between reported and actual catch, the ABC is reduced somewhat further to define the Total Allowable Catch, (TAC), which forms the basic unit of management for many such fisheries.  To reflect this process, our analysis will also consider policies in which the harvest quota is set at 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. To distinguish this approach from MSY, we will refer to this approach as a TAC policy.  This more closely represents a heuristic [e.g. @Hilborn2010] or resilience-based approach [sensu @Fischer2012] than an optimization-based policy.  Importantly, this approach shares the fundamentally stationary assumptions of an MSY policy by defining a constant mortality rather than a dynamic policy.  Thus, despite being more cautious overall and generating lower economic yield than a constant escapement policy, TAC policies continue to harvest at non-zero rates even if a stock falls below $B_{MSY}$, while the constant escapement policy does not.  
 
-Note that compared to Reed's constant escapement, this policy still permits some level of harvest even when stocks are measured below $B_{MSY}$.  
+
 
 ## POMDPs: An optimal treatment of measurement uncertainty
 
@@ -160,19 +160,19 @@ Numerically, each of these functions are defined over a discrete set of possible
 # Results 
 
 <!--
-PGY, MSY, Det, MDP (sigma_g), POMDP (sigma_g, sigma_m)
+TAC, MDP, POMDP (sigma_g, sigma_m)
 -->
 
 
 Figure 1 shows average fish biomass 
 
 ```{r fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement, maximum sustainable yield (MSY), and the porposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels shown in supplement."}
-sims <- read_csv(file.path(log_dir, "sims.csv"), col_types = "inicnn")
+sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnn")
 sims %>%
-  filter(method != "pgy", sigma_g == "0.15") %>%
+  filter(method != "msy", sigma_g == "0.15") %>%
   mutate(method = fct_recode(method, 
                              "Constant escapement" = "det",
-                             "MSY" = "msy",
+                             "TAC" = "pgy",
                              "POMDP" = "pomdp")) %>%
   group_by(time, method, sigma_m) %>%
   summarise(mean = mean(state), sd = sd(state)) %>%
@@ -187,15 +187,18 @@ sims %>%
 
 
 
+
+
+
 POMDP policies depend on the prior belief.  
 
 ```{r}
-all_policies <- read_csv(file.path(log_dir, "all_policies.csv"))
+all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
 all_policies %>% 
-  filter(policy %in% c("low", "medium", "det", "msy")) %>%
+  filter(policy %in% c("low", "medium", "det", "pgy")) %>%
   mutate(policy = fct_recode(policy,
                              "Constant escapement" = "det",
-                              "MSY" = "msy",
+                             "TAC" = "pgy",
                              "POMDP: low prior" = "low",
                              "POMDP: medium prior" = "medium"
                              )) %>%
@@ -208,12 +211,16 @@ all_policies %>%
 
 
 
-```{r eval=FALSE}
-sims %>%
-  filter(model %in% c("biomass", "catch", "POMDP", "Reed")) %>%
+```{r message=FALSE, warning=FALSE}
+read_csv(file.path(log_dir, "ram_ex/ram_ex.csv")) %>% 
+  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
+   mutate(model = fct_recode(model,
+                             "Constant escapement" = "Reed",
+                             "TAC" = "pgy"
+                             )) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", berkeley_colors) ) +
+  scale_color_manual(values = c("black", "grey", berkeley_colors)) +
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 
