@@ -67,7 +67,7 @@ We compare the results of managing simulated fish stocks under the existing opti
 
 # Model
 
-We consider the management problem of setting catch quotas for a marine fishery in the face of imperfect information about the current stock size and uncertainty about future recruitment.  To facilitate tractability and intepretation, we will focus on the well-studied Gordon-Schaefer model [@Schaefer1974; @Gordon1974] of logistic population growth (stock recruitment),  
+We consider the management problem of setting catch quotas for a marine fishery in the face of imperfect information about the current stock size and uncertainty about future recruitment.  To facilitate tractability and intepretation, we will focus on the well-studied Gordon-Schaefer model [@Schaefer1954; @Gordon1954] of logistic population growth (stock recruitment),  
 
 $x_{t+1} = x_t r  \left(1 - \frac{x_t}{K}\right) - h_t \varepsilon_t$
 
@@ -141,7 +141,7 @@ First we will introduce the more heuristic alternative to addressing uncertainty
 
 ## Uncertainty in Practice: TAC
 
-Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas. Maximum Sustainable Yield (MSY) remains the basis of international law (including the UN,  IWC, IATTC ICCAT, ICNAF; @Mace2001) and a familiar standard of management in terrestrial ecosystems as well as aquatic [@Clark1989].  Critics have for some time observed the limitations of harvesting at MSY in face of uncertainty in stock sizes and population dynamics [@Botsford1997].  Many US fisheries reflect this uncertainty through a series of adjustments that effectively reduce the target fishing mortality level to reflect this uncertainty.  Typically, a stock assessment model provides a best estimate of $B_{MSY}$ and corresponding mortality $F_{MSY}$ is used to define the stock Overfishing Limit, (OFL). Based on this, a somewhat lower level is set as the Allowable Biological Catch (ABC), reflecting uncertainty in the stock assessment. To reflect possible uncertainty between reported and actual catch, the ABC is reduced somewhat further to define the Total Allowable Catch, (TAC), which forms the basic unit of management for many such fisheries.  To reflect this process, our analysis will also consider policies in which the harvest quota is set at 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. To distinguish this approach from MSY, we will refer to this approach as a TAC policy.  This more closely represents a heuristic [e.g. @Hilborn2010] or resilience-based approach [sensu @Fischer2012] than an optimization-based policy.  Importantly, this approach shares the fundamentally stationary assumptions of an MSY policy by defining a constant mortality rather than a dynamic policy.  Thus, despite being more cautious overall and generating lower economic yield than a constant escapement policy, TAC policies continue to harvest at non-zero rates even if a stock falls below $B_{MSY}$, while the constant escapement policy does not.  
+Fortunately, management practice has so far ignored this paradoxical suggestion that uncertainty should be met with greater rather than reduced fishing quotas. Maximum Sustainable Yield (MSY) remains the basis of international law (including the UN,  IWC, IATTC ICCAT, ICNAF; @Mace2001) and a familiar standard of management in terrestrial ecosystems as well as aquatic [@Clark1990].  Critics have for some time observed the limitations of harvesting at MSY in face of uncertainty in stock sizes and population dynamics [@Larkin1977; @Botsford1997].  Many US fisheries reflect this uncertainty through a series of adjustments that effectively reduce the target fishing mortality level to reflect this uncertainty.  Typically, a stock assessment model provides a best estimate of $B_{MSY}$ and corresponding mortality $F_{MSY}$ is used to define the stock Overfishing Limit, (OFL). Based on this, a somewhat lower level is set as the Allowable Biological Catch (ABC), reflecting uncertainty in the stock assessment. To reflect possible uncertainty between reported and actual catch, the ABC is reduced somewhat further to define the Total Allowable Catch, (TAC), which forms the basic unit of management for many such fisheries.  To reflect this process, our analysis will also consider policies in which the harvest quota is set at 80% of the level expected under and MSY policy: $H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t$, for a biomass estimated at $B(t)$ in year $t$. To distinguish this approach from MSY, we will refer to this approach as a TAC policy.  This more closely represents a heuristic [e.g. @Hilborn2010] or resilience-based approach [sensu @Fischer2009] than an optimization-based policy.  Importantly, this approach shares the fundamentally stationary assumptions of an MSY policy by defining a constant mortality rather than a dynamic policy.  Thus, despite being more cautious overall and generating lower economic yield than a constant escapement policy, TAC policies continue to harvest at non-zero rates even if a stock falls below $B_{MSY}$, while the constant escapement policy does not.  
 
 
 
@@ -169,7 +169,7 @@ TAC, MDP, POMDP (sigma_g, sigma_m)
 
 Figure 1 shows average fish biomass 
 
-```{r fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement, maximum sustainable yield (MSY), and the porposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels shown in supplement."}
+```{r fig.width=7, fig.height=3.5, fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement, maximum sustainable yield (MSY), and the porposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels and comparison to MSY rather than TAC can be found in the supplementary material."}
 sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnn")
 sims %>%
   filter(method != "msy", sigma_g == "0.15") %>%
@@ -195,7 +195,7 @@ sims %>%
 
 POMDP policies depend on the prior belief.  
 
-```{r}
+```{r fig.width=3.5,fig.height=3.5, fig.cap=""}
 all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
 all_policies %>% 
   filter(policy %in% c("low", "medium", "det", "pgy")) %>%
@@ -214,7 +214,7 @@ all_policies %>%
 
 
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, fig.width=3.5, fig.height = 7, fig.cap="Comparisons of harvest level that would be recommended by policies considered here relative to historical harvest levels in two commercial fish stocks.  POMDP solution assumes a measurement error of 10%."}
 ram_ex <- read_csv(file.path(log_dir, "ram_ex/ram_ex.csv"))
 ram_ex %>%
   filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
@@ -272,6 +272,8 @@ policies can be seen to embrace rather than ignore economic realities.  Notably,
 the optimization approach assumed in POMDP can be easily adapted to reflect other
 constraints such as the cost of idle fleets if a fishery is closed, or include
 the value of ecosystem services from fish not harvested [@Halpern2013].  
+
+
 
 
 <!--Alternate utility functions do not increase
