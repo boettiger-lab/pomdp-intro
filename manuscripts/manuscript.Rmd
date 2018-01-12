@@ -36,8 +36,8 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.width=7, f
 library(tidyverse)
 library(gridExtra)
 library(ggthemes)
-colours <- ptol_pal()(4)
-berkeley_colors <- c("#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")
+palette <- ptol_pal()(6)
+palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45") # berkeley colors
 ```
 
 ```{r suggested_libs, message=FALSE}
@@ -167,22 +167,49 @@ TAC, MDP, POMDP (sigma_g, sigma_m)
 -->
 
 
-Figure 1 shows average fish biomass 
-
-```{r fig.width=7, fig.height=3.5, fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement, maximum sustainable yield (MSY), and the porposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels and comparison to MSY rather than TAC can be found in the supplementary material."}
+```{r load_data, message=FALSE, warning=FALSE}
 sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnn")
+det_sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/det_sims.csv"))
+all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
+ram_ex <- read_csv(file.path(log_dir, "ram_ex/ram_ex.csv"))
+
+colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
+                    c("TAC", "POMDP", "MSY", "CE", 
+                      "POMDP: low prior",
+                      "POMDP: medium prior",
+                      "biomass",
+                      "catch"))
+
+```
+
+Figure 1 shows average fish biomass across 100 replicate simulations under three different management strategies: constant escapement (CE), total allowable catch (TAC; equal to 80% MSY), and partially observed Markov decision process (POMDP) management.  Each successive panel shows a subsequently higher level of measurement error, from $\sigma_m = 0$, $\sigma_m = 0.1$, and $\sigma_m = 0.15$, as indicated.  Standard deviation from the mean across replicate simulations is shown as faint colored bands, indicating significant variation due to stochasticity between individual replicates.  In each panel shown in Figure 1 stochastic recruitment (environmental noise) is set to a moderate $\sigma_g = 0.15$.  In the absence of either environmental noise or measurement error (Supplemental material, Figure S1) POMDP, CE, and MSY would converge to stock at the $B_{MSY}$, while TAC would maintain the stock at a slightly higher level.  The first panel of Figure 1 shows that the the introduction of stochastic growth has a significant negative impact on the TAC strategy (This impact is even more severe for MSY, which always harvests strictly more than TAC by definition, as, shown in Supplemental material Figure S2), which results in an average biomass significantly lower than $B_{MSY}$.  Without mesasurement error, the CE and POMDP strategies are nearly identical with both approximately maintaining the stock at $B_{MSY}$ despite the significant environmental stochasticity.  As measurement error increases in the subsequent panels, CE and TAC strategies perform increasingly poorly, while the POMDP continues to maintain the average stock close to $B_{MSY}$.  Notably, CE is significantly more impacted by measurement uncertainty than TAC, with CE averaging even lower biomass than TAC under moderate measurement uncertainty.  
+
+Figure 1 confirms that the precautionary approach represented by the TAC does indeed prove more robust to the problem of measurement error than the optimization solution represented by CE.  In general, we expect that the rigid assumptions required of optimization will lead to worse outcomes when those assumptions are not met than we see under the corresponding heuristic approach.  Yet it is important to bear in mind that the opposite pattern was observed in the case of environmental stochasticity, in which it was the heuristic TAC stategy rather than the CE strategy that lead to the highest overfishing rate.  In contrast, the POMDP approach successfully handles both stochasticity and observation error, maintaining the stock near $B_{MSY}$ levels that produce the highest yield.  
+
+<!-- Show results of POMDP when over-estimating! -->
+
+
+
+```{r fig.width=7, fig.height=3.5, fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement (CE), Total allowable catch (TAC = 80% MSY), and the proposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels and comparison to MSY rather than TAC can be found in the supplementary material."}
 sims %>%
   filter(method != "msy", sigma_g == "0.15") %>%
   mutate(method = fct_recode(method, 
-                             "Constant escapement" = "det",
+                             "CE" = "det",
                              "TAC" = "pgy",
                              "POMDP" = "pomdp")) %>%
   group_by(time, method, sigma_m) %>%
-  summarise(mean = mean(state), sd = sd(state)) %>%
+  summarise(mean = mean(state), sd = sd(state)) %>% 
+  mutate(sigma_m = as.character(sigma_m)) ->
+fig1_df
+
+
+fig1_df %>%
   ggplot(aes(time, mean, col=method, fill=method)) + 
-  geom_line() + 
+  geom_line(lwd=1) + 
   geom_ribbon(aes(ymax = mean + sd, ymin = mean-sd), col = NA, alpha = 0.1) +
   facet_wrap(~ sigma_m, labeller = label_bquote(sigma[m] == .(sigma_m))) + 
+  scale_color_manual(values = colors) +
+  scale_fill_manual(values = colors) +
   coord_cartesian(ylim = c(0, 1)) + 
   theme(legend.position = "bottom") + 
   ylab("Mean biomass")
@@ -191,40 +218,44 @@ sims %>%
 
 
 
-
-
 POMDP policies depend on the prior belief.  
 
-```{r fig.width=3.5,fig.height=3.5, fig.cap=""}
-all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
+```{r fig.width=7,fig.height=3.5, fig.cap=""}
 all_policies %>% 
   filter(policy %in% c("low", "medium", "det", "pgy")) %>%
   mutate(policy = fct_recode(policy,
-                             "Constant escapement" = "det",
+                             "CE" = "det",
                              "TAC" = "pgy",
                              "POMDP: low prior" = "low",
                              "POMDP: medium prior" = "medium"
-                             )) %>%
+                             )) -> policy_df
+policy_df %>%
   ggplot(aes(state, harvest, col=policy)) + 
   geom_line(lwd=1)  +
-  scale_color_manual(values = c("black", berkeley_colors) ) +
+  scale_color_manual(values = colors) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0, .8))
+```
+```{r fig.width=7,fig.height=3.5, fig.cap=""}
+policy_df %>%
+  ggplot(aes(state, escapement, col=policy)) + 
+  geom_line(lwd=1)  +
+  scale_color_manual(values = colors) +
   coord_cartesian(xlim = c(0,1), ylim = c(0, .8))
 ```
 
 
 
 
-```{r message=FALSE, warning=FALSE, fig.width=3.5, fig.height = 7, fig.cap="Comparisons of harvest level that would be recommended by policies considered here relative to historical harvest levels in two commercial fish stocks.  POMDP solution assumes a measurement error of 10%."}
-ram_ex <- read_csv(file.path(log_dir, "ram_ex/ram_ex.csv"))
+```{r message=FALSE, warning=FALSE, fig.width=7, fig.height = 3.5, fig.cap="Comparisons of harvest level that would be recommended by policies considered here relative to historical harvest levels in two commercial fish stocks.  POMDP solution assumes a measurement error of 10%."}
 ram_ex %>%
   filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
    mutate(model = fct_recode(model,
-                             "Constant escapement" = "Reed",
+                             "CE" = "Reed",
                              "TAC" = "pgy"
                              )) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", berkeley_colors)) +
+  scale_color_manual(values = colors) +
   facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
 ```
 

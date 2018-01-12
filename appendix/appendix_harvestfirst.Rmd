@@ -21,6 +21,31 @@ library(tidyverse)    # for munging and plotting
 library(parallel)
 ```
 
+
+```{r plotting}
+library(gridExtra)
+library(ggthemes)
+library(ggplot2)
+library(Cairo)
+library(extrafont)
+library(hrbrthemes)
+
+extrafont::loadfonts()
+knitr::opts_chunk$set( dev="cairo_pdf")
+hrbrthemes::import_roboto_condensed() 
+ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
+
+palette <- ptol_pal()(6)
+palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45") # berkeley colors
+
+colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
+                    c("TAC", "POMDP", "MSY", "CE", 
+                      "POMDP: low prior",
+                      "POMDP: medium prior",
+                      "biomass",
+                      "catch"))
+```
+
 ```{r}
 options(mc.cores=parallel::detectCores())
 log_dir <- "../data/observe_harvest_recruit" # Store the computed solution files here
@@ -91,7 +116,7 @@ pgy_policy <- function(x) F_PGY * x
 escapement_policy <- function(x) pmax(x - S_star,0)  
 
 x0 <- K/6
-Tmax = 20
+Tmax = 100
 do_det_sim <- function(policy, f, x0, Tmax){
     action <- state <- obs <- as.numeric(rep(NA,Tmax))
     state[1] <- x0
@@ -112,17 +137,27 @@ det_sims <-
          f, x0, Tmax, 
          .id = "method") 
 
-
+write_csv(det_sims, "../data/observe_harvest_recruit/det_sims.csv")
 ```
 
 
 With no stochasticity, MSY leads to the same long-term stock size as under the constant escapement rule, but takes longer to get there.  This level is essentially $B_{MSY}$, though because the model considered here implements events in the order: *observe, harvest, recruit*; rather than *observe, recruit, harvest*, we see the stock at the pre-harvest size of $B_{MSY} + H_{MSY}$ (that is, $K/2 + rK/4$).   More conservative rules, such as a harvest set to 80% of MSY result in faster recovery of the stock than under MSY, but slower than under constant escapement.  Due to the reduced maximum harvest rate, such rules lead to stock returning to a value higher than $B_${MSY}$.  
 
-```{r}
+
+```{r fig.width=3.5, fig.height=3.5}
 det_sims %>%
+  mutate(method = fct_recode(method, 
+                             "CE" = "det",
+                             "TAC" = "pgy",
+                             "MSY" = "msy")) %>%
   ggplot(aes(time, state, col=method)) + 
-  geom_line() + 
-  geom_hline(aes(yintercept=B_MSY), lwd=1)
+  geom_line(lwd=1) + 
+  scale_color_manual(values = colors) +
+  coord_cartesian(ylim = c(0, 1)) + 
+  theme(legend.position = "bottom") + 
+  ylab("Mean biomass")
+```
+
 
 ```
 
