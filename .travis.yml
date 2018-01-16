@@ -19,7 +19,7 @@ script:
 #script:
 ## Test on locked version
 #  - docker run -ti -v $(pwd):/home/rstudio/repo -w /home/rstudio/repo \
-#    rocker/verse:3.4.2 \
+#    rocker/verse:3.4.3 \
 #    R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
 
 
