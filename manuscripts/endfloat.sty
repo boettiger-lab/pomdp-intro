@@ -1,350 +1,383 @@
-%% Save file as: ENDFLOAT.STY			Source: FILESERV@SHSU.BITNET
-% Name: endfloat.sty
-% Description: LaTeX style to put figures and tables at end of article
-% Keywords: LaTeX, style-option, float, figure, table
-% Author: James Darrell McCauley <jdm5548@diamond.tamu.edu>
-% Latest Version: Version 2.0 <02 Jun 1992>
-% Archives: pasture.ecn.purdue.edu, shsu.edu or FILESERV@SHSU.BITNET
-% Note: See USAGE, CHANGE LOG, and BUGS below.
-% See also: comment.sty, endnotes.sty
-%
-% WHAT IS THIS STYLE FOR?
-% The purpose of this style is to put all figures on pages by themselves
-% at the end of an article in a section named Figures. Likewise for tables.
-% Reference can be made in the text of where the figure should have been
-% (only caption appears - see \markersintext [default] and \nomarkersintext
-%  below. \ref and \label always works on the ones at the end). This is
-% usually required when preparing submissions to journals.
-%
-% WARNING!
-% This creates two extra files: \jobname.fff and \jobname.ttt
-% It may also necessitate another latex cycle because of the float
-% movement (when you use \label and \ref) and bibtex.
-%
-% WHY WRITE THIS STYLE?
-% Many journals require tables and figures to be separated from the text
-% when you submit those ugly doublespaced copies.  They also usually want
-% a list of figures/tables before these sections (capability added in v2.0).
-%
-% I am writing a set of styles that look exactly like a journal, but just
-% by adding one style option, I wanted the user to meet the requirements
-% for formatting submissions. I encourage others to do the same.
-%
-% USAGE:
-% if you use:                  \documentstyle{article}
-% change it to:                \documentstyle[endfloat]{article}
-% That's all you have to do. This will produce two extra files with
-% .ttt and .fff extensions (for tables and figures, respectively).
-%
-% This puts all figures and tables at the end of your document
-% and creates a List of Figures and/or List of Tables section
-% at the end (when appropriate). If you do not want a these, they
-% can be turned off by putting \nofiglist and \notablist in the
-% preamble of your document.
-%
-% It also leaves notes in the text (i.e., ``[Figure 4 about here.]'').
-% If you would rather not have these, this can be turned off by
-% putting \nomarkersintext in the preamble of your document. If you
-% do not like this marker, you can change it by using \renewcommand
-% (see PREPARING A FOREIGN LANGUAGE VERSION below).
-%
-% HOW DID I WRITE THIS?
-%
-% Overview: redefine the figure and table environment following    % bj
-% the \begin{comment} ... \end{comment} environment of             % bj
-% comment.sty by Victor Eijkhout <eijkhout@csrd.uiuc.edu>.
-% Instead of processing what was between \begin{...} and \end{...},
-% every line is written to a file (\jobname.fff for figures, \jobname.ttt
-% for tables).  Then, when you do an \end{document}, the figure section
-% is processed, then the table section is processed. This could easily
-% be reversed (tables first) if necessary.
-%
-% After initial versions, I received much help from Ronald Kappert
-% and Brian Junker (see CHANGE LOG below). <Thanks guys!>
-% If anyone has any bugs/suggestions to report, mail them to
-% jdm5548@diamond.tamu.edu.
-%				Darrell McCauley <02 Jun 1992>
-%
-% PREPARING A FOREIGN LANGUAGE VERSION
-%
-% 10-03-92: Announcements in any language can be generated with
-%           a \renewcommand{\figureplace} or \renewcommand{\tableplace}
-%           with default
-%\def\figureplace{\bf\figurename~\thepostfig should be placed near here.}
-%           and
-%\def\tableplace{\bf\tablename~\theposttbl should be placed near here.}
-%           The name of figures and tables is governed by standard
-%           LaTeX variables \figurename and \tablename.
-%           The name of the section with the figures can be governed with
-%           a \renewcommand{\figuresection}{...Name of Figs. section...}
-%           Ditto for \tablesection. Default is \def\tablesection{Tables}
-%           and \def\figuresection{Figures}.
-%
-%           URC (RJHK)
-%
-% CHANGE LOG
-% (if you make any changes to this, record them here)
-% <25 Feb 1992> v0.1 - created by Darrell McCauley <jdm5548@diamond.tamu.edu>
-% <01 Mar 1992> v1.0 - cleaned up and released <jdm5548@diamond.tamu.edu>
-%
-% <10 Mar 1992> v1.0 - some adaptions for LaTeX 2.09 <14-1-92> and
-%                      international namegiving by Ronald Kappert
-%                      <R.Kappert@urc.kun.nl>.
-% <13 Mar 1992> v1.1 - verified that floats were used before a section was
-%                      created for them. <jdm5548@diamond.tamu.edu>
-% <14 Mar 1992> v1.2 - corrected typo that may have caused figures not
-%                      to be printed. <jdm5548@diamond.tamu.edu>
-%
-% <27 May 1992> ???? - (1) changed "comment" to "figure" and "komment" to
-%                      "table" throughout, to avoid collisions with other
-%                      style files' definitions of "\comment".  Also
-%                      fixes "\begin{table} ends with \end{komment}"
-%                      error generated by my (older) version of PC TeX.
-%
-%                      (2) Fixed gobble of float position specifiers.
-%                      There are two ways to do this: (a) \write
-%                      \ifnextchar[{\gobbleuntilnext}{} into every
-%                      environment written to \jobname.fff, etc.; (b)
-%                      save LaTeX's old def's of \figure and \table
-%                      and re-use them when processing fig's and tables.
-%                      I chose the latter approach, for maximum
-%                      consistency with LaTeX, other style files, etc.
-%
-%                      (3) Added def's of \tablename and \figurename,
-%                      which my version of PC-TeX seemed to need.
-%                      <backward compatability for earlier versions :-> %jdm
-%
-%                      (4) Moved formatting of figure/table markers to
-%                      \figureplace and \tableplace.
-%
-%                      (5) Style change: in-text markers are now
-%                      centered reminders like "[Figure 4 about here.]".
-%
-%                      (6) Style change: added list of tables and
-%                      figures to the table and figure sections.
-%                      Change back to old format with \nofiglist and
-%                      \notablist.
-%
-%                      (7) Changed default to \markersintext.
-%
-%                      (8) Fixed trivial typo in \@openposttbls
-%
-%                      All changes marked "% bj" at end of line.
-%                      Brian Junker <brian@stat.cmu.edu>
-% <02 Jun 1992> v2.0 - incorporated changes made by Junker (see above).
-%                      Corrected problem of extra blank spaces in
-%                      the output when \nomarkersintext was in effect
-%                      (bug reported by <schultz@unixg.ubc.ca>).
-%                      <jdm5548@diamond.tamu.edu>
-% BUGS:
-% <14 Mar 1992> still needs to gobble float position specifiers.
-%
+%%
+%% This is file `endfloat.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% endfloat.dtx  (with options: `package')
+%% 
+%% IMPORTANT NOTICE:
+%% This is part of a set of tools (or better yet, experiments) written
+%% by Jeff Goldberg (jeffrey@goldmark.org), who is writting this
+%% not only for it utility value, but as part of the process of learning
+%% LaTeX.  These tools are far from perfect, and comments are welcome.
+%% 
+%% The usual disclaimers apply:  If it doesn't work right that's your
+%% problem (but do let me know).
+%% 
+%% The usual GNU-style conditions apply: If you change it, you take
+%% the blame; if you pass it on, pass on all present condiditions;
+%% 
+\def\filename{endfloat}
+\def\fileversion{v2.5d}
+\def\filedate{2011/12/25}
+\def\docdate{2011/12/05}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+%% Description: LaTeX style to put figures and tables at end of article
+%% Keywords: LaTeX, style-option, float, figure, table
+%% Authors: James Darrell McCauley <jdm5548@diamond.tamu.edu>,
+%% Jeff Goldberg <jeffrey@goldmark.org>,
+%% Axel Sommerfeldt <axel.sommerfeldt@f-m.fm>
+%% Maintainer: Jeff Goldberg <jeffrey@goldmark.org>
+%% Latest Version: Version 2.5 <November 2011>
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{endfloat}[\filedate\space\fileversion\space
+               LaTeX2e package puts figures and tables at end (jdm)]
 \newif\if@domarkers
-\def\markersintext{
- \@domarkerstrue }
-\def\nomarkersintext{
- \@domarkersfalse
-}
-%\nomarkersintext
-\markersintext     % bj
-
 \newif\if@tablist                % bj
-\def\dotablist{\@tablisttrue}    % bj
-\def\notablist{\@tablistfalse}   % bj
-\dotablist                       % bj
-
 \newif\if@figlist                % bj
-\def\dofiglist{\@figlisttrue}    % bj
-\def\nofiglist{\@figlistfalse}   % bj
-\dofiglist                       % bj
-
-\newcounter{postfig}
-\newwrite\@postfigs
-\newif\if@postfigsopen \global\@postfigsopenfalse
- \def\@openpostfigs{\immediate\openout\@postfigs=\jobname.fff\relax
-      \message{(\jobname.fff)}%
-      \global\@postfigsopentrue}
-
-\newcounter{posttbl}
-\newwrite\@posttbls
-\newif\if@posttblsopen \global\@posttblsopenfalse
-
-\def\@openposttbls{\immediate\openout\@posttbls=\jobname.ttt\relax
-      \message{(\jobname.ttt)}%                                      % bj
-      \global\@posttblsopentrue}
-
-\def\makeinnocent#1{\catcode`#1=12 }
-
-%\def\figureplace{\bf\figurename~\thepostfig should be placed near here.} % bj
-%\def\tableplace{\bf\tablename~\theposttbl should be placed near here.} % bj
-
-\@ifundefined{figurename}{\def\figurename{Figure}}{}  % bj
-\@ifundefined{tablename}{\def\tablename{Table}}{}     % bj
-
-\def\figureplace{\begin{center}          % bj
-[\figurename~\thepostfig\ about here.]   % bj
-\end{center}}                            % bj
-\def\tableplace{\begin{center}           % bj
-[\tablename~\theposttbl\  about here.]   % bj
-\end{center}}                            % bj
-
-\def\@gobbleuntilnext[#1]{}
-%\let\eatarg\@gobbleuntilnext  % bj
-%\let\ifnextchar\@ifnextchar   % bj
-
+\newif\if@tabhead
+\newif\if@fighead
+\newif\if@tablesfirst
+\newif\ifefloat@figures          % as
+\newif\ifefloat@tables           % as
+\newif\ifefloat@list             % as
+\newif\ifefloat@head             % as
+\newcommand*\efloat@syncobsoleteflags{%
+  \efloat@ifflag{tablelist}{\@tablisttrue}{\@tablistfalse}%
+  \efloat@ifflag{figurelist}{\@figlisttrue}{\@figlistfalse}%
+  \efloat@ifflag{tablehead}{\@tabheadtrue}{\@tabheadfalse}%
+  \efloat@ifflag{figurehead}{\@figheadtrue}{\@figheadfalse}}
+\@domarkerstrue
+\@tablisttrue
+\@figlisttrue
+\@tabheadfalse
+\@figheadfalse
+\@tablesfirstfalse
+\efloat@figurestrue              % as
+\efloat@tablestrue               % as
+\efloat@listtrue                 % as
+\efloat@headfalse                % as
+\RequirePackage{keyval}
+\newcommand*\SetupDelayedFloat[2]{%
+  \def\efloat@type{#1}%
+  \setkeys{endfloat}{#2}}
+\define@key{endfloat}{list}[true]{\efloat@setkey{list}{#1}}
+\define@key{endfloat}{nolist}[]{\efloat@setkey{list}{false}}
+\define@key{endfloat}{head}[true]{\efloat@setkey{head}{#1}}
+\define@key{endfloat}{nohead}[]{\efloat@setkey{head}{false}}
+\newcommand*\efloat@setkey{%
+  \@expandtwoargs\efloat@@setkey\efloat@type}
+\newcommand*\efloat@@setkey[3]{%
+  \@ifundefined{ef@ext@#1}%
+    {\PackageError{endfloat}%
+      {Unknown environment `#1'}%
+      {Only environments known to the `endfloat' package are allowed here.}}%
+    {\efloat@setflag{#1#2}{#3}%
+     \efloat@syncobsoleteflags}}
+\newcommand*\efloat@ifflag[1]{%
+  \@nameuse{ef@if@#1}}
+\newcommand*\efloat@setflag[2]{%
+  \@nameuse{if#2}%
+    \global\expandafter\let\csname ef@if@#1\endcsname\@firstoftwo
+  \else
+    \global\expandafter\let\csname ef@if@#1\endcsname\@secondoftwo
+  \fi}%
+\newcommand*\efloat@newwrite[1]{%
+   \expandafter\newwrite\csname efloat@post#1\endcsname}
+\newcommand*\efloat@openpost[1]{%
+   \expandafter\immediate\expandafter\openout
+      \csname efloat@post#1\endcsname =\jobname.#1\relax
+   \ef@setct{#1}{1}%
+   \message{(\jobname.#1)}}
+\newcommand*\ef@newct[1]{%
+ \expandafter \newcount \csname @ef@#1open\endcsname}
+\newcommand*\ef@setct[2]{%
+  \expandafter\global\csname @ef@#1open\endcsname=#2\relax}
+\newcommand*\ef@ifct[1]{%
+  \expandafter\ifnum \csname @ef@#1open\endcsname>0 \relax
+    \expandafter\@firstoftwo
+  \else
+    \expandafter\@secondoftwo
+  \fi}
+\newcommand*\efloat@condopen[1]{%
+   \ef@ifct{#1}{}{\efloat@openpost{#1}}}
+\newcommand\efloat@iwrite[1]{%
+   \expandafter\immediate\expandafter\write\csname efloat@post#1\endcsname}
+\newcommand{\efloatseparator}{\clearpage}
+\newcommand*{\ef@makeinnocent}[1]{\catcode`#1=12 }
+\providecommand{\figurename}{Figure}
+\providecommand{\tablename}{Table}
+\newcommand{\floatplace}[1]{%
+   \begin{center}
+     [\csname #1name\endcsname~\csname thepost#1\endcsname\ about here.]
+   \end{center}}
+\newcommand*\DeclareDelayedFloat{%
+  \@ifstar{\efloat@declare{*}}{\efloat@declare{}}}
+\@onlypreamble\DeclareDelayedFloat
+\newcommand*\efloat@declare[2]{%
+  \@testopt{\efloat@@declare{#1}{#2}}{ef#2}}
+\@onlypreamble\efloat@declare
+\def\efloat@@declare#1#2[#3]#4{%
+  \newcounter{post#2}%
+  \edef\@tempa{#3}%
+  \edef\@tempb{\@nameuse{ext@#2}}%
+  \ifx\@tempa\@tempb
+    \PackageError{endfloat}%
+      {File extension `\@tempa' is already used by the List}%
+      {Try using a different file extension here, e.g. `ef\expandafter\@gobbletwo\@tempa'.}%
+  \else
+    \expandafter\let\csname ef@ext@#2\endcsname\@tempa
+  \fi
+  \efloat@newwrite{#3}%
+  \ef@newct{#3}%
+  \@ifundefined{#2name}{\@namedef{#2name}{\@nameuse{fname@#2}}}{}%
+  \efloat@namedef{#2place}{\floatplace{#2}}%
+  \DeclareDelayedFloatFlavor#1{#2}{#2}%
+  \expandafter\providecommand\csname #2section\endcsname{#4}%
+  \efloat@namedef{process#2s@hook}{}%
+  \edef\@tempb{\def\noexpand\@tempa{\@car#2\@nil}}%
+  \uppercase\expandafter{\@tempb}%
+  \edef\@tempb{%
+    \noexpand\g@addto@macro\noexpand\@tempa{\@cdr#2\@nil}}%
+  \@tempb
+  \efloat@namedef{AtBegin\@tempa s}{%
+    \expandafter\g@addto@macro\csname process#2s@hook\endcsname}%
+  \expandafter\expandafter\expandafter\let\expandafter
+    \csname AtBegin\@tempa es\expandafter\endcsname
+    \csname AtBegin\@tempa s\endcsname
+  \efloat@namedef{process#2s}{\efloat@process{#3}{#2}}%
+  \efloat@namedef{process#2es}{\@nameuse{process#2s}}%
+  \efloat@@setkey{#2}{list}{efloat@list}%
+  \efloat@@setkey{#2}{head}{efloat@head}%
+  \@cons\efloat@list{{#2}}}
+\@onlypreamble\efloat@@declare
+\newcommand*\efloat@list{}
+\newcommand*\efloat@namedef[1]{%
+  \expandafter\newcommand\csname #1\endcsname}
+\newcommand*\DeclareDelayedFloatFlavor{%
+  \@ifstar{\efloat@declareflavor\@gobble}%
+          {\efloat@declareflavor\@iden}}
+\@onlypreamble\DeclareDelayedFloatFlavor
+\let\DeclareDelayedFloatFlavour\DeclareDelayedFloatFlavor
+\@onlypreamble\DeclareDelayedFloatFlavour
+\newcommand*\efloat@declareflavor[3]{%
+  \@ifundefined{ef@ext@#3}%
+    {\PackageError{endfloat}%
+       {Unknown environment `#3'}%
+       {Only environments known to the `endfloat' package are allowed here.}}%
+    {\efloat@AtBeginDocument{%
+       \efloat@@declareflavor{#2}{#3}%
+       #1{\efloat@@declareflavor{#2*}{#3}}}}}
+\@onlypreamble\efloat@declareflavor
+\newcommand*\efloat@@declareflavor[2]{%
+  \def\@tempa{\@efloat{#2}{#1}}%
+  \@ifundefined{efloat@#1@ORI}%
+    {\expandafter\expandafter\expandafter\let\expandafter
+       \csname efloat@#1@ORI\expandafter\endcsname
+       \csname #1\endcsname
+     \expandafter\g@addto@macro\expandafter\efloat@restorefloats\expandafter{%
+       \expandafter\let
+         \csname #1\expandafter\endcsname
+         \csname efloat@#1@ORI\endcsname}%
+     \expandafter\let\csname#1\endcsname\@tempa}%
+    {\expandafter\ifx\csname#1\endcsname\@tempa \else
+       \PackageError{endfloat}%
+         {The environment `#1' was already redefined}%
+         {You can't use \noexpand\DeclareDelayedFloatFlavor twice for a given environment.}%
+     \fi}}
+\@onlypreamble\efloat@@declareflavor
+\@ifpackageloaded{floatrow}{%
+  \PackageInfo{endfloat}{`floatrow' package detected, delaying redefinitions}
+  \providecommand*\efloat@AtBeginDocument{\AtBeginDocument}
+}{%
+  \providecommand*\efloat@AtBeginDocument{\@iden}
+}
+\newcommand*\efloat@restorefloats{}
+\newcommand*\efloat@SetOption[1]{%
+  \def\@elt##1{\efloat@Setup{##1}{#1}}%
+  \efloat@list
+  \let\@elt\relax}
+\newcommand\efloat@Setup[2]{%
+  \g@addto@macro\efloat@ProcessOptions{\SetupDelayedFloat{#1}{#2}}}
+\newcommand\efloat@ProcessOptions{%
+  \let\efloat@SetOption\@undefined
+  \let\efloat@Setup\@undefined
+  \let\efloat@ProcessOptions\@undefined}
+\DeclareOption{nomarkers}{\@domarkersfalse}
+\DeclareOption{markers}{\@domarkerstrue}
+\newcommand{\markersintext}{\@domarkerstrue}
+\newcommand{\nomarkersintext}{\@domarkersfalse}
+\newcommand{\dotablist}{%
+  \SetupDelayedFloat{table}{list=true}}
+\newcommand{\notablist}{%
+  \SetupDelayedFloat{table}{list=false,head=true}}
+\newcommand{\dofiglist}{%
+  \SetupDelayedFloat{figure}{list=true}}
+\newcommand{\nofiglist}{%
+  \SetupDelayedFloat{figure}{list=false,head=true}}
+\DeclareOption{nolists}{\efloat@listfalse \efloat@SetOption{list=false}}
+\DeclareOption{lists}{\efloat@listtrue \efloat@SetOption{list=true}}
+\DeclareOption{notablist}{\efloat@Setup{table}{list=false}}
+\DeclareOption{nofiglist}{\efloat@Setup{figure}{list=false}}
+\DeclareOption{tablist}{\efloat@Setup{table}{list=true}}
+\DeclareOption{figlist}{\efloat@Setup{figure}{list=true}}
+\DeclareOption{heads}{\efloat@headtrue \efloat@SetOption{head=true}}
+\DeclareOption{noheads}{\efloat@headfalse \efloat@SetOption{head=false}}
+\DeclareOption{fighead}{\efloat@Setup{figure}{head=true}}
+\DeclareOption{tabhead}{\efloat@Setup{table}{head=true}}
+\DeclareOption{nofighead}{\efloat@Setup{figure}{head=false}}
+\DeclareOption{notabhead}{\efloat@Setup{table}{head=false}}
+\DeclareOption{tablesfirst}{\@tablesfirsttrue}
+\DeclareOption{figuresfirst}{\@tablesfirstfalse}
+\DeclareOption{tablesonly}{\efloat@figuresfalse \efloat@tablestrue}
+\DeclareOption{figuresonly}{\efloat@figurestrue \efloat@tablesfalse}
+\DeclareOption*{%
+   \PackageWarning{endfloat}{Unknown option `\CurrentOption'}}
+\ProcessOptions*
 \let\@bfig\figure             % bj
-\let\@efig\endfigure          % bj
 \let\@btab\table              % bj
-\let\@etab\endtable           % bj
-\let\endfigure\relax          % bj
-\let\endtable\relax           % bj
-
-%
-% the {blank space } appearing with \nomarkersintext was fixed by adding
-% a percent sign (%) at strategic locations, determined by setting
-% \tracingcommands=1           % Darrell
-%
-
-\def\figure{%
-%    \if@nextchar[{
-    \if@postfigsopen \else \@openpostfigs \fi%
-    \immediate\write\@postfigs{\string\begin{figure}}%
-%    \immediate\write\@postfigs{\string\ifnextchar[{\string\eatarg}{}} % bj
-    \if@domarkers%
-       \addtocounter{postfig}{1}% % bj
-       \figureplace%              % bj
-    \fi%
-    \def\@currenvir{figure}%
-    \begingroup%
-    \let\do\makeinnocent \dospecials%
-    \makeinnocent\^^L% and whatever other special cases
-    \endlinechar`\^^M \catcode`\^^M=12 \xfigure}%
+\if@tablesfirst
+  \ifefloat@tables
+    \DeclareDelayedFloat{table}[ttt]{Tables}
+  \fi
+  \ifefloat@figures
+    \DeclareDelayedFloat{figure}[fff]{Figures}
+  \fi
+\else
+  \ifefloat@figures
+    \DeclareDelayedFloat{figure}[fff]{Figures}
+  \fi
+  \ifefloat@tables
+    \DeclareDelayedFloat{table}[ttt]{Tables}
+  \fi
+\fi
+\efloat@ProcessOptions
+\let\c@postfig\c@postfigure
+\let\c@posttbl\c@posttable
+\newcommand\thepostfig{\thepostfigure}
+\newcommand\theposttbl{\theposttable}
+\let\efloat@float\relax
+\newcommand*\@efloat[1]{%
+  \expandafter\@@efloat\expandafter{\csname ef@ext@#1\endcsname}{#1}}
+\newcommand*\@@efloat[3]{%
+  \efloat@condopen{#1}%
+  \if@domarkers
+    \stepcounter{post#2}% % bj
+    \@nameuse{#2place}%   % bj
+  \fi
+  \def\@currenvir{efloat@float}%
+  \begingroup
+  \let\do\ef@makeinnocent \dospecials
+  \ef@makeinnocent\^^L% and whatever other special cases
+  \endlinechar`\^^M \catcode`\^^M=12 %
+  \efloat@patch\efloat@endtest{#3}% as
+  \efloat@patch\efloat@enddbltest{#3}% as
+  \def\next{\efloat@xfloat{#1}}%
+  \next\string\begin{#3}}%
+\newcommand*\efloat@foundend[2]{%
+  \edef\efloat@enddbltest{\string\end{#2}}%
+  \efloat@found@end{#1}}
+\newcommand*\efloat@found@end[1]{%
+  \efloat@iwrite{#1}{\efloat@enddbltest}%
+  \def\next{\endgroup\end{efloat@float}%
+    \efloat@iwrite{#1}{\string\efloatseparator}%
+    \efloat@iwrite{#1}{ }}}%
 {\catcode`\^^M=12 \endlinechar=-1 %
- \gdef\xfigure#1^^M{\def\test{#1}%
-      \ifx\test\endfiguretest%
-          \def\next{\endgroup\end{figure}%
-          \immediate\write\@postfigs{\string\end{figure}}%
-          \immediate\write\@postfigs{\string\clearpage}%
-          \immediate\write\@postfigs{ }}%
-      \else\ifx\test\enddblfiguretest%
-          \def\next{\endgroup\end{figure}%
-          \immediate\write\@postfigs{\string\end{figure}}%
-          \immediate\write\@postfigs{\string\clearpage}%
-          \immediate\write\@postfigs{ }}%
-      % skip over float position specifier (fps)
-      \else\@ifnextchar[%
-          \@whilesw \ifx\test\CB \fi%
-	    \@gobble%
-      \else%
-          \if@postfigsopen \else \@openpostfigs \fi%
-          \immediate\write\@postfigs{#1}%
-          \let\next\xfigure%
-      \fi \fi \next}%
-}%
-
-%hello
+ \long\gdef\efloat@xfloat#1#2^^M{\def\test{#2}%
+  \ifx\test\efloat@endtest
+    \efloat@found@end{#1}%
+  \else\ifx\test\efloat@enddbltest
+    \efloat@found@end{#1}%
+  \else
+    \efloat@iwrite{#1}{#2}%
+  \fi \fi \next}}
 {\escapechar=-1%
- \xdef\CB{]}%
- \xdef\endfiguretest{\string\\end\string\{figure\string\}}%
- \xdef\enddblfiguretest{\string\\end\string\{figure*\string\}}%
-}%
-
-\def\table{\if@posttblsopen \else \@openposttbls \fi
-    \immediate\write\@posttbls{\string\begin{table}}%
-%    \immediate\write\@posttbls{\string\ifnextchar[{\string\eatarg}{}} % bj
-    \if@domarkers
-       \addtocounter{posttbl}{1} % bj
-       \tableplace               % bj
-    \fi
-    \def\@currenvir{table}%
-    \begingroup
-    \let\do\makeinnocent \dospecials
-    \makeinnocent\^^L% and whatever other special cases
-    \endlinechar`\^^M \catcode`\^^M=12 \xtable}
-{\catcode`\^^M=12 \endlinechar=-1 %
- \gdef\xtable#1^^M{\def\test{#1}
-      \ifx\test\enddbltabletest
-          \def\next{\endgroup\end{table}
-          \immediate\write\@posttbls{\string\end{table}}
-          \immediate\write\@posttbls{\string\clearpage}
-          \immediate\write\@posttbls{ }}
-      \else\ifx\test\endtabletest
-          \def\next{\endgroup\end{table}
-          \immediate\write\@posttbls{\string\end{table}}
-          \immediate\write\@posttbls{\string\clearpage}
-          \immediate\write\@posttbls{ }}
-      \else
-          \if@posttblsopen \else \@openposttbls \fi
-          \immediate\write\@posttbls{#1}%
-          \let\next\xtable
-      \fi \fi \next}
+ \xdef\efloat@endtest{\string\\end\string\{X\string\}}
+ \xdef\efloat@enddbltest{\string\\end\string\{X\string\}}
 }
-
-{\escapechar=-1
- \xdef\enddbltabletest{\string\\end\string\{table*\string\}}
- \xdef\endtabletest{\string\\end\string\{table\string\}}
-}
-%% end of stuff from comment.sty
-
-% \let\figure=\figure
-%\ let\table=\table
-\@namedef{figure*}{\figure}
-\@namedef{table*}{\table}
-\def\endfloat{\endfigure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\def\figuresection{Figures}
-\def\tablesection{Tables}
-
-\def\processfigures{
-  \if@postfigsopen
-  \immediate\closeout\@postfigs \global\@postfigsopenfalse
-%  \let\figure={\@float{figure}} % bj
-%  \let\endfigure=\end@float     % bj
-  \let\figure\@bfig              % bj
-  \let\endfigure\@efig           % bj
-  \clearpage                                                        % bj
-  \if@figlist                                                       % bj
-    {\normalsize\listoffigures}                                     % bj
-    \clearpage                                                      % bj
-  \else                                                             % bj
-    \section*{\figuresection}                                       % bj
-    \markboth{\uppercase{\figuresection}}{\uppercase{\figuresection}}% bj
-  \fi                                                               % bj
-  {                                                                 % bj
-  \def\baselinestretch{1}\tiny\normalsize                           % bj
-  \@input{\jobname.fff}                                             % bj
-  }                                                                 % bj
-  \fi}
-
-\def\processtables{
-\if@posttblsopen
-  \immediate\closeout\@posttbls \global\@posttblsopenfalse
-%  \let\table={\@float{table}}   % bj
-%  \let\endtable=\end@float      % bj
-  \let\table\@btab               % bj
-  \let\endtable\@etab            % bj
-  \clearpage                                                      % bj
-  \if@tablist                                                     % bj
-    {\normalsize\listoftables}                                    % bj
-    \clearpage                                                    % bj
-  \else                                                           % bj
-    \section*{\tablesection}                                      % bj
-    \markboth{\uppercase{\tablesection}}{\uppercase{\tablesection}}% bj
-  \fi                                                             % bj
-  {                                                               % bj
-  \def\baselinestretch{1}\tiny\normalsize                         % bj
-  \@input{\jobname.ttt}                                           % bj
-  }
-  \fi}
-
-\def\enddocument{\onecolumn\processfigures\clearpage\processtables
-\@checkend{document}\clearpage\begingroup
-\if@filesw \immediate\closeout\@mainaux
-\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
-\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
-\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
-cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
-
+\newcommand*\efloat@patch[2]{%
+    \def\x##1X##2\@nil{\def#1{##1#2##2}}%
+    \expandafter\x#1\@nil}
+\newcommand*\ef@xfigure{\ef@xfloat{fff}{figure}}
+\newcommand*\ef@xtable{\ef@xfloat{ttt}{table}}
+\newcommand*\ef@xfloat[2]{%
+  \efloat@patch\efloat@endtest{#2}%
+  \efloat@patch\efloat@enddbltest{#2*}%
+  \def\next{\efloat@xfloat{#1}}%
+  \next}
+\newcommand*\processdelayedfloats@hook{}
+\def\AtBeginDelayedFloats{%
+   \g@addto@macro\processdelayedfloats@hook}
+\newcommand*\processotherdelayedfloats{}
+\newcommand*\efloat@process[2]{%
+  \ef@ifct{#1}{%
+    \expandafter\immediate\expandafter\closeout\csname efloat@post#1\endcsname
+    \ef@setct{#1}{0}%
+    \clearpage                                                         % bj
+    \efloat@ifflag{#2list}{%                                           % bj
+      {\normalsize\efloat@listof{#2}}%                                 % bj
+      \clearpage                                                       % bj
+    }{}%
+    \efloat@ifflag{#2head}{%
+      \section*{\@nameuse{#2section}}%                                 % bj
+      \suppressfloats[t]%                                              % jpg
+    }{}%
+    \markboth                                                          % bj
+      {\expandafter\uppercase\expandafter{\csname #2section\endcsname}}% bj
+      {\expandafter\uppercase\expandafter{\csname #2section\endcsname}}% bj
+    \def\efloat@type{#2}%
+    \processdelayedfloat@hook
+    \@nameuse{process#2s@hook}%
+    \@input{\jobname.#1}%
+  }{}}
+\newcommand*\processdelayedfloat@hook{}
+\newcommand*\efloat@listof[1]{%
+  \expandafter\providecommand\csname list#1name\endcsname
+    {List of \@nameuse{#1section}}%
+  \@ifundefined{listof#1s}%
+    {\@ifundefined{listof}%
+      {\PackageError{endfloat}%
+         {Don't know how to make List of `#1'}%
+         {You could try defining \protect\listof#1s on your own}}%
+      {\listof{#1}{\@nameuse{list#1name}}}}%
+    {\@nameuse{listof#1s}}}
+\renewcommand{\bottomfraction}{1.0}
+\renewcommand{\topfraction}{1.0}
+\renewcommand{\textfraction}{0.0}
+\newcommand{\processdelayedfloats}{{%
+  \def\baselinestretch{1}\normalsize
+  \efloat@restorefloats
+  \processdelayedfloats@hook
+  \efloat@processfloats
+  \processotherdelayedfloats}}
+\newcommand*\efloat@processfloats{%
+  \let\@tempa\@empty
+  \def\@elt##1{\g@addto@macro\@tempa{\@nameuse{process##1es}}}%
+  \efloat@list
+  \let\@elt\relax
+  \@tempa}
+\AtEndDocument{%                                      % jpg
+   \message{AED endfloat: Processing end Figures and Tables}% % jpg
+   \onecolumn
+   \processdelayedfloats }
+\InputIfFileExists{endfloat.cfg}{%
+   \typeout{*** Using endfloat.cfg ***}}{}
 \endinput
+%%
+%% End of file `endfloat.sty'.
