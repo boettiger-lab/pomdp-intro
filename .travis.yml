@@ -4,8 +4,10 @@ language: R
 sudo: false
 cache: packages
 script: 
+  - R -e 'rmarkdown::render(manuscripts/manuscript.Rmd)'
+## Travis lacks enough memory to handle appendices
 ## test that all .Rmd files can render 
-  - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
+#  - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
 ## Optionally check linting  
 #  - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), function(x) testthat::expect_length(lintr::lint(x),0))'
 
