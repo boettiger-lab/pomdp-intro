@@ -1,0 +1,24 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+sudo: false
+cache: packages
+script: 
+## test that all .Rmd files can render 
+  - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
+## Optionally check linting  
+#  - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), function(x) testthat::expect_length(lintr::lint(x),0))'
+
+
+## Alternate recipe: use Docker instead of R travis
+#sudo: required
+#services:
+#  - docker
+#script:
+## Test on locked version
+#  - docker run -ti -v $(pwd):/home/rstudio/repo -w /home/rstudio/repo \
+#    rocker/verse:3.4.2 \
+#    R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
+
+
+
