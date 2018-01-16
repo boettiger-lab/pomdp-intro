@@ -66,7 +66,7 @@ colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"),
 ```{r load_data, message=FALSE, warning=FALSE}
 log_dir <- "../data" # solution files here
 
-sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnn")
+sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnnn")
 det_sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/det_sims.csv"))
 all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
 ram_ex <- read_csv(file.path(log_dir, "ram_ex/ram_ex.csv"))
@@ -190,12 +190,9 @@ Figure 1 shows average fish biomass across 100 replicate simulations under three
 
 Figure 1 confirms that the precautionary approach represented by the TAC does indeed prove more robust to the problem of measurement error than the optimization solution represented by CE.  In general, we expect that the rigid assumptions required of optimization will lead to worse outcomes when those assumptions are not met than we see under the corresponding heuristic approach.  Yet it is important to bear in mind that the opposite pattern was observed in the case of environmental stochasticity, in which it was the heuristic TAC stategy rather than the CE strategy that lead to the highest overfishing rate.  In contrast, the POMDP approach successfully handles both stochasticity and observation error, maintaining the stock near $B_{MSY}$ levels that produce the highest yield.  
 
-<!-- Show results of POMDP when over-estimating! -->
-
-
-
 ```{r fig.width=7, fig.height=3.5, fig.cap="Average fish biomass under different management strategies under increasing levels of measurement uncertainty. Each plot the mean stock size over time across 100 replicate simulations under each policy: constant escapement (CE), Total allowable catch (TAC = 80% MSY), and the proposed partially observed Markov decision process (POMDP) method. Measurement error increases as a normal distribution with standard deviation 0, 0.1, or 0.15, as indicated at the top of the panel.  Environmental stochasticity is fixed a standard deviation of 0.15 in each panel.  Carrying capacity K normalized to 1, r = 0.75. Additional environmental noise levels and comparison to MSY rather than TAC can be found in the supplementary material."}
 sims %>%
+  select(-value) %>%
   filter(method != "msy", sigma_g == "0.15") %>%
   mutate(method = fct_recode(method, 
                              "CE" = "det",
@@ -219,12 +216,57 @@ fig1_df %>%
   ylab("Mean biomass")
 ```
 
+This pattern in management success in ecological terms (the relatively recovery and maintenance of fish biomass) is also bourne out in terms of economic performance.  Figure 2 shows the mean net present value (averaging across replicates and discounting future profits by the discount factor $\gamma$) for these same simulations at increasing levels of measurement uncertainty.  As before, environmental stochasticity is set at $\sigma_g = 0.15$.  In the absense of measurement uncertainty, constant escapement (CE) is optimal, though POMDP performs nearly as well, while TAC underperforms.  As measurement uncertainty increases, the economic value of CE declines, remaining better than TAC at modest measurement error $\sigma_m = 0.1$ but worse at higher uncertainty.  Though the risk of stock collapse does increase with increasing measurement error under TAC (as seen by the mean declines in Figure 1), these have little impact on the economic value due to the discount rate.  A smaller discount rate would penalize unlikely but not improbable collapses more, since a significant amount of time is required to realize those rare events.  Supplemental Figure S3 summarizes these economic trends across different noise values $\sigma_g$ and includes comparison to a simple MSY policy.
+
+
+```{r fig.width=7, fig.height=3.5, fig.cap=""}
+sims %>%
+  select(time, value, rep, method, sigma_m, sigma_g) %>%
+  filter(sigma_g == "0.15", method != "msy") %>%
+  group_by(rep, method, sigma_m, sigma_g) %>%
+  summarise(npv = sum(value)) %>%  
+  group_by(method, sigma_m, sigma_g) %>%
+  summarise(net_value = mean(npv), se = sd(npv) / mean(npv)) %>%
+  ungroup() %>%
+  mutate(method = fct_recode(method,
+                             "CE" = "det",
+                             "TAC" = "pgy",
+                             "POMDP" = "pomdp")) %>%
+  
+  
+  ggplot(aes(method, net_value, ymin=net_value-se, ymax=net_value+se, fill=method)) + 
+  geom_bar(position=position_dodge(), stat="identity") + 
+  geom_errorbar(size=.3,width=.2,
+                position=position_dodge(.9)) +
+  facet_wrap(~sigma_m, 
+             labeller = label_bquote(sigma[m] == .(sigma_m))) +
+  theme(legend.position = "none") + 
+  scale_color_manual(values = colors) +
+  scale_fill_manual(values = colors) +
+  ylab("expected net present value")
+```
+
+
+
+<!-- Show results of POMDP when over-estimating! -->
+
+
+To better understand the differences in performance of these strategies and resolve the paradox of uncertainty, we must take a closer look at how the specific action recommended by each policy compares given the same observation.  Figure 3 shows the action taken by each strategy in response to a measurement of the stock size.  The first panel shows the policy in terms of harvest $H$, that is, the catch quota that would be set by each strategy.  For reference, the second panel shows the same policies but in terms of expected escapement, $S = Y - H$ for observed stock $Y$, which is more common in the control literature [e.g. @Reed1979; @Clark1987; @Sethi2005] than in fisheries literature.  The first panel clearly illustrates the contrast between the constant escapement (CE) strategy and the precautionary Total Allowable Catch (TAC) strategy: CE sets harvest strictly to zero for stocks estimated at biomass below $B_{MSY}$, while TAC permits a modest harvest of even very small stocks.  Viewing the same policies in terms of escapement, second panel, makes it clear that only CE strategy corresponds to keeping escapement constant.  This is important, as theoretical work ever since the proofs of @Reed1979 often attempts to simplify the calculations by assuming the optimal policy must be a constant-escapement type strategy [e.g. @Ludwig1981; @Roughgarden1996; @Engen1997;  @Moxnes2003].  
+
+While the catch quota under both TAC and CE stategies can be completely determined given the most recent observation of the stock size by using the policy curves shown in Figure 2, this is not the case for the POMDP approach. This fundamental difference is key to understanding the difference in performance and resolving the paradox of uncertainty.  The POMDP policy cannot be specified by the most recent observation alone. Instead, the POMDP policy depends on all prior observations, not just the most recent.  The reason for this complexity comes from the Markov property.  Observations of the state in the perfectly observed system satisfy the Markov property: once we have measured the current biomass exactly, we cannot get any better estimate of the current stock size by studying older measurements. When measurements are uncertain this is no longer the case: intuitively, by comparing the most recent measurement to previous observations we may be able to infer when any given measurement is unusually high or unusually low.  POMDP formalizes this intutition by capturing the information from all previous observations into a *prior belief*.  This prior belief is updated after every subsequent action and observation in accordance with Bayes Law.  The mechanics of this process are well documented in the extensive literature on POMDPs [e.g. ], but for our purposes 
+
+The other approaches exploit this property, and the simplifying assumptions introduced in previous work attempting to address measurement uncertainty [@Clark1987; @Sethi2005] serve to restore or assert this.  The POMDP 
+
+
+It is important to bear in mind several issues when intepreting these figures. First, the horizontal axis reflects the measured stock size, which may differ from the (unobservable) true stock size when measurement uncertainty is present.  
+
+Consequently, the realized escapement may differ from the target level.  
 
 
 
 POMDP policies depend on the prior belief.  
 
-```{r fig.width=7,fig.height=7, fig.cap=""}
+```{r fig.width=7, fig.height=7, fig.cap=""}
 all_policies %>% 
   filter(policy %in% c("low", "medium", "det", "pgy")) %>%
   mutate(policy = fct_recode(policy,
@@ -239,13 +281,15 @@ harvest <- policy_df %>%
   scale_color_manual(values = colors) +
   coord_cartesian(xlim = c(0,1), ylim = c(0, .8)) + 
   ggtitle("Harvest view") + 
-  theme(legend.position="none")
+  theme(legend.position="none") + 
+  xlab("Estimated stock biomass")
 
 escapement <- policy_df %>%
   ggplot(aes(state, escapement, col=policy)) + 
   geom_line(lwd=1)  +
   scale_color_manual(values = colors) +
   coord_cartesian(xlim = c(0,1), ylim = c(0, .8)) +
+  xlab("Estimated stock biomass") +
   ggtitle("Escapement view") + 
   theme(legend.position = "bottom")
 

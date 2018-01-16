@@ -319,7 +319,7 @@ write_csv(sims, file.path(log_dir, "sims.csv"))
 ```
 
 
-##  Figure S1
+##  Figure S2
 
 We the results varying over different noise intensities, sigma_g, and sigma_m.  Figure 1 of the main text considers the case of sigma_g = 0.05, sigma_m = 0.1
 
@@ -341,6 +341,40 @@ sims %>%
 
 ```
 
+##  Figure S3
+
+Economic Value
+
+```{r}
+sims %>%
+  select(time, value, rep, method, sigma_m, sigma_g) %>%
+  filter(sigma_g %in% c("0.1", "0.15")) %>%
+  group_by(rep, method, sigma_m, sigma_g) %>%
+  summarise(npv = sum(value)) %>%  
+  group_by(method, sigma_m, sigma_g) %>%
+  summarise(net_value = mean(npv), se = sd(npv) / mean(npv)) %>%
+  ungroup() %>%
+  mutate(method = fct_recode(method,
+                             "MSY" = "msy",
+                             "CE" = "det",
+                             "TAC" = "pgy",
+                             "POMDP" = "pomdp")) %>%
+  
+  
+  ggplot(aes(method, net_value, ymin=net_value-se, ymax=net_value+se, fill=method)) + 
+  geom_bar(position=position_dodge(), stat="identity") + 
+  geom_errorbar(size=.3,width=.2,
+                position=position_dodge(.9)) +
+  facet_grid(sigma_m~sigma_g, 
+             labeller = label_bquote(sigma[m] == .(sigma_m),
+                                     sigma[g] == .(sigma_g))) +
+  theme(legend.position = "none") + 
+  scale_color_manual(values = colors) +
+  scale_fill_manual(values = colors) +
+  ylab("expected net present value")
+
+
+```
 
 
 ## Policy plots
