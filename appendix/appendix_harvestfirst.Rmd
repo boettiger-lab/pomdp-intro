@@ -310,10 +310,9 @@ Combine the resulting data frames
 
 ```{r}
 sims <- bind_rows(static_sims, pomdp_sims) %>%
-    left_join(meta) %>%    ## combine output with scenarios
-    mutate(state = states[state], action = actions[action]) # index -> value
-
-sims <- sims %>% select(time, state, rep, method, sigma_m, sigma_g)
+    left_join(meta) %>%  ## include scenario information (sigmas; etc)
+    mutate(state = states[state], action = actions[action]) %>%
+    select(time, state, rep, method, sigma_m, sigma_g, value)
 
 sim_col_types <- paste0(gsub("^(\\w).*", "\\1", sapply(unname(sims), class)), collapse = "")
 write_csv(sims, file.path(log_dir, "sims.csv"))
