@@ -1,0 +1,350 @@
+%% Save file as: ENDFLOAT.STY			Source: FILESERV@SHSU.BITNET
+% Name: endfloat.sty
+% Description: LaTeX style to put figures and tables at end of article
+% Keywords: LaTeX, style-option, float, figure, table
+% Author: James Darrell McCauley <jdm5548@diamond.tamu.edu>
+% Latest Version: Version 2.0 <02 Jun 1992>
+% Archives: pasture.ecn.purdue.edu, shsu.edu or FILESERV@SHSU.BITNET
+% Note: See USAGE, CHANGE LOG, and BUGS below.
+% See also: comment.sty, endnotes.sty
+%
+% WHAT IS THIS STYLE FOR?
+% The purpose of this style is to put all figures on pages by themselves
+% at the end of an article in a section named Figures. Likewise for tables.
+% Reference can be made in the text of where the figure should have been
+% (only caption appears - see \markersintext [default] and \nomarkersintext
+%  below. \ref and \label always works on the ones at the end). This is
+% usually required when preparing submissions to journals.
+%
+% WARNING!
+% This creates two extra files: \jobname.fff and \jobname.ttt
+% It may also necessitate another latex cycle because of the float
+% movement (when you use \label and \ref) and bibtex.
+%
+% WHY WRITE THIS STYLE?
+% Many journals require tables and figures to be separated from the text
+% when you submit those ugly doublespaced copies.  They also usually want
+% a list of figures/tables before these sections (capability added in v2.0).
+%
+% I am writing a set of styles that look exactly like a journal, but just
+% by adding one style option, I wanted the user to meet the requirements
+% for formatting submissions. I encourage others to do the same.
+%
+% USAGE:
+% if you use:                  \documentstyle{article}
+% change it to:                \documentstyle[endfloat]{article}
+% That's all you have to do. This will produce two extra files with
+% .ttt and .fff extensions (for tables and figures, respectively).
+%
+% This puts all figures and tables at the end of your document
+% and creates a List of Figures and/or List of Tables section
+% at the end (when appropriate). If you do not want a these, they
+% can be turned off by putting \nofiglist and \notablist in the
+% preamble of your document.
+%
+% It also leaves notes in the text (i.e., ``[Figure 4 about here.]'').
+% If you would rather not have these, this can be turned off by
+% putting \nomarkersintext in the preamble of your document. If you
+% do not like this marker, you can change it by using \renewcommand
+% (see PREPARING A FOREIGN LANGUAGE VERSION below).
+%
+% HOW DID I WRITE THIS?
+%
+% Overview: redefine the figure and table environment following    % bj
+% the \begin{comment} ... \end{comment} environment of             % bj
+% comment.sty by Victor Eijkhout <eijkhout@csrd.uiuc.edu>.
+% Instead of processing what was between \begin{...} and \end{...},
+% every line is written to a file (\jobname.fff for figures, \jobname.ttt
+% for tables).  Then, when you do an \end{document}, the figure section
+% is processed, then the table section is processed. This could easily
+% be reversed (tables first) if necessary.
+%
+% After initial versions, I received much help from Ronald Kappert
+% and Brian Junker (see CHANGE LOG below). <Thanks guys!>
+% If anyone has any bugs/suggestions to report, mail them to
+% jdm5548@diamond.tamu.edu.
+%				Darrell McCauley <02 Jun 1992>
+%
+% PREPARING A FOREIGN LANGUAGE VERSION
+%
+% 10-03-92: Announcements in any language can be generated with
+%           a \renewcommand{\figureplace} or \renewcommand{\tableplace}
+%           with default
+%\def\figureplace{\bf\figurename~\thepostfig should be placed near here.}
+%           and
+%\def\tableplace{\bf\tablename~\theposttbl should be placed near here.}
+%           The name of figures and tables is governed by standard
+%           LaTeX variables \figurename and \tablename.
+%           The name of the section with the figures can be governed with
+%           a \renewcommand{\figuresection}{...Name of Figs. section...}
+%           Ditto for \tablesection. Default is \def\tablesection{Tables}
+%           and \def\figuresection{Figures}.
+%
+%           URC (RJHK)
+%
+% CHANGE LOG
+% (if you make any changes to this, record them here)
+% <25 Feb 1992> v0.1 - created by Darrell McCauley <jdm5548@diamond.tamu.edu>
+% <01 Mar 1992> v1.0 - cleaned up and released <jdm5548@diamond.tamu.edu>
+%
+% <10 Mar 1992> v1.0 - some adaptions for LaTeX 2.09 <14-1-92> and
+%                      international namegiving by Ronald Kappert
+%                      <R.Kappert@urc.kun.nl>.
+% <13 Mar 1992> v1.1 - verified that floats were used before a section was
+%                      created for them. <jdm5548@diamond.tamu.edu>
+% <14 Mar 1992> v1.2 - corrected typo that may have caused figures not
+%                      to be printed. <jdm5548@diamond.tamu.edu>
+%
+% <27 May 1992> ???? - (1) changed "comment" to "figure" and "komment" to
+%                      "table" throughout, to avoid collisions with other
+%                      style files' definitions of "\comment".  Also
+%                      fixes "\begin{table} ends with \end{komment}"
+%                      error generated by my (older) version of PC TeX.
+%
+%                      (2) Fixed gobble of float position specifiers.
+%                      There are two ways to do this: (a) \write
+%                      \ifnextchar[{\gobbleuntilnext}{} into every
+%                      environment written to \jobname.fff, etc.; (b)
+%                      save LaTeX's old def's of \figure and \table
+%                      and re-use them when processing fig's and tables.
+%                      I chose the latter approach, for maximum
+%                      consistency with LaTeX, other style files, etc.
+%
+%                      (3) Added def's of \tablename and \figurename,
+%                      which my version of PC-TeX seemed to need.
+%                      <backward compatability for earlier versions :-> %jdm
+%
+%                      (4) Moved formatting of figure/table markers to
+%                      \figureplace and \tableplace.
+%
+%                      (5) Style change: in-text markers are now
+%                      centered reminders like "[Figure 4 about here.]".
+%
+%                      (6) Style change: added list of tables and
+%                      figures to the table and figure sections.
+%                      Change back to old format with \nofiglist and
+%                      \notablist.
+%
+%                      (7) Changed default to \markersintext.
+%
+%                      (8) Fixed trivial typo in \@openposttbls
+%
+%                      All changes marked "% bj" at end of line.
+%                      Brian Junker <brian@stat.cmu.edu>
+% <02 Jun 1992> v2.0 - incorporated changes made by Junker (see above).
+%                      Corrected problem of extra blank spaces in
+%                      the output when \nomarkersintext was in effect
+%                      (bug reported by <schultz@unixg.ubc.ca>).
+%                      <jdm5548@diamond.tamu.edu>
+% BUGS:
+% <14 Mar 1992> still needs to gobble float position specifiers.
+%
+\newif\if@domarkers
+\def\markersintext{
+ \@domarkerstrue }
+\def\nomarkersintext{
+ \@domarkersfalse
+}
+%\nomarkersintext
+\markersintext     % bj
+
+\newif\if@tablist                % bj
+\def\dotablist{\@tablisttrue}    % bj
+\def\notablist{\@tablistfalse}   % bj
+\dotablist                       % bj
+
+\newif\if@figlist                % bj
+\def\dofiglist{\@figlisttrue}    % bj
+\def\nofiglist{\@figlistfalse}   % bj
+\dofiglist                       % bj
+
+\newcounter{postfig}
+\newwrite\@postfigs
+\newif\if@postfigsopen \global\@postfigsopenfalse
+ \def\@openpostfigs{\immediate\openout\@postfigs=\jobname.fff\relax
+      \message{(\jobname.fff)}%
+      \global\@postfigsopentrue}
+
+\newcounter{posttbl}
+\newwrite\@posttbls
+\newif\if@posttblsopen \global\@posttblsopenfalse
+
+\def\@openposttbls{\immediate\openout\@posttbls=\jobname.ttt\relax
+      \message{(\jobname.ttt)}%                                      % bj
+      \global\@posttblsopentrue}
+
+\def\makeinnocent#1{\catcode`#1=12 }
+
+%\def\figureplace{\bf\figurename~\thepostfig should be placed near here.} % bj
+%\def\tableplace{\bf\tablename~\theposttbl should be placed near here.} % bj
+
+\@ifundefined{figurename}{\def\figurename{Figure}}{}  % bj
+\@ifundefined{tablename}{\def\tablename{Table}}{}     % bj
+
+\def\figureplace{\begin{center}          % bj
+[\figurename~\thepostfig\ about here.]   % bj
+\end{center}}                            % bj
+\def\tableplace{\begin{center}           % bj
+[\tablename~\theposttbl\  about here.]   % bj
+\end{center}}                            % bj
+
+\def\@gobbleuntilnext[#1]{}
+%\let\eatarg\@gobbleuntilnext  % bj
+%\let\ifnextchar\@ifnextchar   % bj
+
+\let\@bfig\figure             % bj
+\let\@efig\endfigure          % bj
+\let\@btab\table              % bj
+\let\@etab\endtable           % bj
+\let\endfigure\relax          % bj
+\let\endtable\relax           % bj
+
+%
+% the {blank space } appearing with \nomarkersintext was fixed by adding
+% a percent sign (%) at strategic locations, determined by setting
+% \tracingcommands=1           % Darrell
+%
+
+\def\figure{%
+%    \if@nextchar[{
+    \if@postfigsopen \else \@openpostfigs \fi%
+    \immediate\write\@postfigs{\string\begin{figure}}%
+%    \immediate\write\@postfigs{\string\ifnextchar[{\string\eatarg}{}} % bj
+    \if@domarkers%
+       \addtocounter{postfig}{1}% % bj
+       \figureplace%              % bj
+    \fi%
+    \def\@currenvir{figure}%
+    \begingroup%
+    \let\do\makeinnocent \dospecials%
+    \makeinnocent\^^L% and whatever other special cases
+    \endlinechar`\^^M \catcode`\^^M=12 \xfigure}%
+{\catcode`\^^M=12 \endlinechar=-1 %
+ \gdef\xfigure#1^^M{\def\test{#1}%
+      \ifx\test\endfiguretest%
+          \def\next{\endgroup\end{figure}%
+          \immediate\write\@postfigs{\string\end{figure}}%
+          \immediate\write\@postfigs{\string\clearpage}%
+          \immediate\write\@postfigs{ }}%
+      \else\ifx\test\enddblfiguretest%
+          \def\next{\endgroup\end{figure}%
+          \immediate\write\@postfigs{\string\end{figure}}%
+          \immediate\write\@postfigs{\string\clearpage}%
+          \immediate\write\@postfigs{ }}%
+      % skip over float position specifier (fps)
+      \else\@ifnextchar[%
+          \@whilesw \ifx\test\CB \fi%
+	    \@gobble%
+      \else%
+          \if@postfigsopen \else \@openpostfigs \fi%
+          \immediate\write\@postfigs{#1}%
+          \let\next\xfigure%
+      \fi \fi \next}%
+}%
+
+%hello
+{\escapechar=-1%
+ \xdef\CB{]}%
+ \xdef\endfiguretest{\string\\end\string\{figure\string\}}%
+ \xdef\enddblfiguretest{\string\\end\string\{figure*\string\}}%
+}%
+
+\def\table{\if@posttblsopen \else \@openposttbls \fi
+    \immediate\write\@posttbls{\string\begin{table}}%
+%    \immediate\write\@posttbls{\string\ifnextchar[{\string\eatarg}{}} % bj
+    \if@domarkers
+       \addtocounter{posttbl}{1} % bj
+       \tableplace               % bj
+    \fi
+    \def\@currenvir{table}%
+    \begingroup
+    \let\do\makeinnocent \dospecials
+    \makeinnocent\^^L% and whatever other special cases
+    \endlinechar`\^^M \catcode`\^^M=12 \xtable}
+{\catcode`\^^M=12 \endlinechar=-1 %
+ \gdef\xtable#1^^M{\def\test{#1}
+      \ifx\test\enddbltabletest
+          \def\next{\endgroup\end{table}
+          \immediate\write\@posttbls{\string\end{table}}
+          \immediate\write\@posttbls{\string\clearpage}
+          \immediate\write\@posttbls{ }}
+      \else\ifx\test\endtabletest
+          \def\next{\endgroup\end{table}
+          \immediate\write\@posttbls{\string\end{table}}
+          \immediate\write\@posttbls{\string\clearpage}
+          \immediate\write\@posttbls{ }}
+      \else
+          \if@posttblsopen \else \@openposttbls \fi
+          \immediate\write\@posttbls{#1}%
+          \let\next\xtable
+      \fi \fi \next}
+}
+
+{\escapechar=-1
+ \xdef\enddbltabletest{\string\\end\string\{table*\string\}}
+ \xdef\endtabletest{\string\\end\string\{table\string\}}
+}
+%% end of stuff from comment.sty
+
+% \let\figure=\figure
+%\ let\table=\table
+\@namedef{figure*}{\figure}
+\@namedef{table*}{\table}
+\def\endfloat{\endfigure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\figuresection{Figures}
+\def\tablesection{Tables}
+
+\def\processfigures{
+  \if@postfigsopen
+  \immediate\closeout\@postfigs \global\@postfigsopenfalse
+%  \let\figure={\@float{figure}} % bj
+%  \let\endfigure=\end@float     % bj
+  \let\figure\@bfig              % bj
+  \let\endfigure\@efig           % bj
+  \clearpage                                                        % bj
+  \if@figlist                                                       % bj
+    {\normalsize\listoffigures}                                     % bj
+    \clearpage                                                      % bj
+  \else                                                             % bj
+    \section*{\figuresection}                                       % bj
+    \markboth{\uppercase{\figuresection}}{\uppercase{\figuresection}}% bj
+  \fi                                                               % bj
+  {                                                                 % bj
+  \def\baselinestretch{1}\tiny\normalsize                           % bj
+  \@input{\jobname.fff}                                             % bj
+  }                                                                 % bj
+  \fi}
+
+\def\processtables{
+\if@posttblsopen
+  \immediate\closeout\@posttbls \global\@posttblsopenfalse
+%  \let\table={\@float{table}}   % bj
+%  \let\endtable=\end@float      % bj
+  \let\table\@btab               % bj
+  \let\endtable\@etab            % bj
+  \clearpage                                                      % bj
+  \if@tablist                                                     % bj
+    {\normalsize\listoftables}                                    % bj
+    \clearpage                                                    % bj
+  \else                                                           % bj
+    \section*{\tablesection}                                      % bj
+    \markboth{\uppercase{\tablesection}}{\uppercase{\tablesection}}% bj
+  \fi                                                             % bj
+  {                                                               % bj
+  \def\baselinestretch{1}\tiny\normalsize                         % bj
+  \@input{\jobname.ttt}                                           % bj
+  }
+  \fi}
+
+\def\enddocument{\onecolumn\processfigures\clearpage\processtables
+\@checkend{document}\clearpage\begingroup
+\if@filesw \immediate\closeout\@mainaux
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+
+\endinput
