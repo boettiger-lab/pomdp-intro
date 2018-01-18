@@ -474,7 +474,7 @@ The comparison of POMDP policy is yet more complicated, but the POMDP policy can
 Let us look at the POMDP solutions under various priors focusing on the case of moderate uncertainty, $\sigma_g = \sigma_m = 0.1$.  (Recall we have already solved the POMDP solution for this model in the simulations above, as defined by the `alpha` vectors, so we can quickly load that solution now.)
 
 ```{r}
-i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0.15) %>% pull(scenario) %>% as.integer()
+i <- meta %>% filter(sigma_g == 0.15, sigma_m ==0.1) %>% pull(scenario) %>% as.integer()
 m <- models[[i]]
 alpha <- alphas[[i]] # we need the corresponding alpha vectors  
 ```
@@ -490,8 +490,8 @@ For more realistic set of priors, we will consider priors centered at the target
 
 ```{r}
 i_star <- which.min(abs(states - S_star))
-i_low <- which.min(abs(states - 0.5 * S_star))
-i_high <- which.min(abs(states - 1.5 * S_star))
+i_low <- which.min(abs(states - 0.25 * K))
+i_high <- which.min(abs(states - 0.75 * K))
 
 prior_star <- m$observation[,i_star,1]
 prior_low <- m$observation[,i_low,1]
@@ -524,30 +524,21 @@ all_policies <- bind_rows(policy_table, pomdp_policies)
 write_csv(all_policies, file.path(log_dir, "all_policies.csv"))
 ```
 
-```{r}
-priors <- 
-data_frame(states, 
-           prior_low,
-           prior_star,
-           unif_prior,
-           prior_high) 
-write_csv(priors, file.path(log_dir, "priors.csv"))
-```
-
-```
-
-```
-
 
 POMDP policies depend on the prior belief.  
 
 ```{r fig.width=5, fig.height=7, fig.cap=""}
 priors <- 
-  read_csv(file.path(log_dir, "priors.csv")) %>%
-  select(states, 
+  data_frame(states, 
+             prior_low,
+             prior_star,
+             unif_prior,
+             prior_high) %>%
+  select(state = states, 
          "POMDP: low prior" = prior_low, 
          "POMDP: high prior" = prior_high) %>%
-  gather(prior, belief, -states) 
+  gather(policy, prior, -state) %>%
+  mutate(prior = prior*10)
 
 policy_df <- all_policies %>% 
   filter(policy %in% c("low", "high", "det", "pgy")) %>%
@@ -557,8 +548,30 @@ policy_df <- all_policies %>%
                              "POMDP: low prior" = "low",
                              "POMDP: high prior" = "high"
                              )) 
+
+
+policies_w_priors <- right_join(priors, policy_df, by = c("state", "policy"))
+
+write_csv(policies_w_priors, file.path(log_dir, "policies_w_priors.csv"))
+
+```
+
+
+```{r fig.width=5, fig.height=7, fig.cap=""}
+policies_w_priors %>% 
+  gather(panel, value, -state, -policy) %>%
+  ggplot(aes(state, value, col=policy)) + 
+  geom_line(lwd=1)  +
+  facet_wrap(~panel, ncol=1, scales = "free_y") +
+  scale_color_manual(values = colors) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0,.8)) + 
+  theme(legend.position = "bottom")
+```
+
+
+```{r  fig.width=5, fig.height=7, fig.cap=""}
 prior <- 
-  ggplot(priors,aes(states, belief, color = prior)) + 
+  ggplot(priors,aes(state, belief, color = policy)) + 
   geom_line(lwd=1)  + 
   scale_color_manual(values = colors) +
   coord_cartesian(xlim = c(0,1)) +

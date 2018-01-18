@@ -438,10 +438,15 @@ write_csv(sims,file.path(log_dir, "ram_ex.csv"))
 ```
 
 ```{r}
-sims %>%
-  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy")) %>%
+ram_ex %>%
+  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy", "msy")) %>%
+   mutate(model = fct_recode(model,
+                             "MSY" = "msy",
+                             "CE" = "Reed",
+                             "TAC" = "pgy"
+                             )) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", "#D9661F", "#3B7EA1", "#FDB515", "#6C3302",  "#00B0DA",  "#CFDD45")) +
-  facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
+  scale_color_manual(values = colors) +
+  facet_wrap(~commonname, scales = "free", ncol=1)  
 ```
