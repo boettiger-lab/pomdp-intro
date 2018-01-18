@@ -69,6 +69,7 @@ log_dir <- "../data" # solution files here
 sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/sims.csv"), col_types = "inicnnn")
 det_sims <- read_csv(file.path(log_dir, "observe_harvest_recruit/det_sims.csv"))
 all_policies <- read_csv(file.path(log_dir, "observe_harvest_recruit/all_policies.csv"))
+priors <- read_csv(file.path(log_dir, "observe_harvest_recruit/priors.csv"))
 ram_ex <- read_csv(file.path(log_dir, "ram_ex/ram_ex.csv"))
 
 ```
@@ -270,7 +271,7 @@ POMDP policies depend on the prior belief.
 
 ```{r fig.width=7, fig.height=7, fig.cap=""}
 priors <- 
-  read_csv(file.path(log_dir, "priors.csv")) %>%
+  priors %>%
   select(states, 
          "POMDP: low prior" = prior_low, 
          "POMDP: high prior" = prior_high) %>%
