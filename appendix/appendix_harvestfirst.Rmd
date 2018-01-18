@@ -41,7 +41,7 @@ palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45")
 colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
                     c("TAC", "POMDP", "MSY", "CE", 
                       "POMDP: low prior",
-                      "POMDP: medium prior",
+                      "POMDP: high prior",
                       "biomass",
                       "catch"))
 ```
@@ -157,11 +157,6 @@ det_sims %>%
   theme(legend.position = "bottom") + 
   ylab("Mean biomass")
 ```
-
-
-```
-
-
 
 -----------
 
@@ -324,6 +319,7 @@ write_csv(sims, file.path(log_dir, "sims.csv"))
 We the results varying over different noise intensities, sigma_g, and sigma_m.  Figure 1 of the main text considers the case of sigma_g = 0.05, sigma_m = 0.1
 
 ```{r}
+sim_col_types <-  "inicnnn"
 sims <- read_csv(file.path(log_dir, "sims.csv"), col_types = sim_col_types)
 
 sims %>%
@@ -478,9 +474,9 @@ The comparison of POMDP policy is yet more complicated, but the POMDP policy can
 Let us look at the POMDP solutions under various priors focusing on the case of moderate uncertainty, $\sigma_g = \sigma_m = 0.1$.  (Recall we have already solved the POMDP solution for this model in the simulations above, as defined by the `alpha` vectors, so we can quickly load that solution now.)
 
 ```{r}
-i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0.1) %>% pull(scenario) %>% as.integer()
+i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0.15) %>% pull(scenario) %>% as.integer()
 m <- models[[i]]
-alpha <- alphas[[i]] # we need the corresponding alpha vectors
+alpha <- alphas[[i]] # we need the corresponding alpha vectors  
 ```
 
 We will consider what the POMDP solution looks like under a few different prior beliefs. A uniform prior sounds like a conservative assumption, but it is not: it puts significantly more weight on improbably large stock values than other priors.  (Loading the $\alpha$ vectors from our POMDP solution computed earlier, we can then compute a POMDP given these $\alpha$, the matrices for transition, observation, and reward, and the prior we are using)
@@ -488,7 +484,6 @@ We will consider what the POMDP solution looks like under a few different prior 
 ```{r}
 unif_prior = rep(1, length(states)) / length(states) # initial belief
 unif <- compute_policy(alpha, m$transition, m$observation, m$reward,  unif_prior)
-
 ```
 
 For more realistic set of priors, we will consider priors centered at the target $B_{MSY}$ size (or $S^*$ in the language of Reed), at half $B_{MSY}$, and at 1.5 times $B_{MSY}$, each with a standard deviation of $\sigma_m = 0.1$ (i.e. the uncertainty around a single observation of a stock at that size.)
@@ -505,7 +500,6 @@ prior_high <- m$observation[,i_high,1]
 star <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_star)
 low <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_low)
 high <- compute_policy(alpha, m$transition, m$observation, m$reward,  prior_high)
-
 ```
 
 
@@ -528,56 +522,79 @@ pomdp_policies <- df %>%
 all_policies <- bind_rows(policy_table, pomdp_policies)
 
 write_csv(all_policies, file.path(log_dir, "all_policies.csv"))
+```
 
+```{r}
+priors <- 
+data_frame(states, 
+           prior_low,
+           prior_star,
+           unif_prior,
+           prior_high) 
+write_csv(priors, file.path(log_dir, "priors.csv"))
+```
+
+```
 
 ```
 
 
-```{r}
-pomdp_policies %>% 
-  ggplot(aes(state, harvest, col=policy)) + 
-  geom_line()  + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
-```
+POMDP policies depend on the prior belief.  
 
+```{r fig.width=5, fig.height=7, fig.cap=""}
+priors <- 
+  read_csv(file.path(log_dir, "priors.csv")) %>%
+  select(states, 
+         "POMDP: low prior" = prior_low, 
+         "POMDP: high prior" = prior_high) %>%
+  gather(prior, belief, -states) 
 
-```{r}
-pomdp_policies %>% 
-  ggplot(aes(state, escapement, col=policy)) + 
-  geom_line()  + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
-```
-
-
-```{r}
-all_policies <- read_csv(file.path(log_dir, "all_policies.csv"))
-all_policies %>% 
-  filter(policy %in% c("low", "medium", "det", "msy")) %>%
+policy_df <- all_policies %>% 
+  filter(policy %in% c("low", "high", "det", "pgy")) %>%
   mutate(policy = fct_recode(policy,
-                             "MSY" = "msy",
-                             "Constant escapement" = "det",
+                             "CE" = "det",
+                             "TAC" = "pgy",
                              "POMDP: low prior" = "low",
-                             "POMDP: medium prior" = "medium"
-                             )) %>%
+                             "POMDP: high prior" = "high"
+                             )) 
+prior <- 
+  ggplot(priors,aes(states, belief, color = prior)) + 
+  geom_line(lwd=1)  + 
+  scale_color_manual(values = colors) +
+  coord_cartesian(xlim = c(0,1)) +
+  ggtitle("POMDP priors") + 
+  xlab("Estimated stock biomass") + 
+  theme(legend.position = "none")
+
+harvest <- policy_df %>%
   ggplot(aes(state, harvest, col=policy)) + 
-  geom_line()  + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
+  geom_line(lwd=1)  +
+  scale_color_manual(values = colors) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0, .8)) + 
+  ggtitle("Harvest view") + 
+  theme(legend.position="none") + 
+  xlab("Estimated stock biomass")
+
+escapement <- policy_df %>%
+  ggplot(aes(state, escapement, col=policy)) + 
+  geom_line(lwd=1)  +
+  scale_color_manual(values = colors) +
+  coord_cartesian(xlim = c(0,1), ylim = c(0, .8)) +
+  xlab("Estimated stock biomass") +
+  ggtitle("Escapement view") + 
+  theme(legend.position = "bottom")
+
+gridExtra::grid.arrange(harvest, escapement, prior,
+  layout_matrix = rbind(1,1,2,2, 3))
+
 ```
+
+
+
 
 
 
 ```{r}
-all_policies <- read_csv(file.path(log_dir, "all_policies.csv"))
-all_policies %>% 
-  filter(policy %in% c("low", "medium", "det", "msy")) %>%
-  mutate(policy = fct_recode(policy,
-                             "MSY" = "msy",
-                             "Constant escapement" = "det",
-                             "POMDP: low prior" = "low",
-                             "POMDP: medium prior" = "medium"
-                             )) %>%
-  ggplot(aes(state, escapement, col=policy)) + 
-  geom_line()  + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))
-```
 
+
+```
