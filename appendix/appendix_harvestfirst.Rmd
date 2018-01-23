@@ -284,7 +284,7 @@ static_sims <-
 
 ```
 
-## Simulating the POMDP policies under uncertiainty
+## Simulating the POMDP policies under uncertainty
 
 ```{r pomdp_sims}
 set.seed(12345)
@@ -371,6 +371,34 @@ sims %>%
 
 
 ```
+
+-----
+
+
+## POMDP simulations overestimating measurement uncertainty
+
+```{r pomdp_sims}
+set.seed(12345)
+
+pomdp_overest_sims <- 
+  map2_dfr(models, alphas, function(.x, .y){
+    pomdp_overestimates(transition = .x$transition, 
+            model_observation = .x$observation, 
+            reward = .x$reward, 
+            discount = discount, 
+            true_observation <- models[[true]]$observation,
+            x0 = x0,
+            Tmax = Tmax,
+            alpha = .y,
+            reps = reps)$df %>% 
+              mutate(method = "pomdp") # include a column labeling method
+           },
+           .id = "scenario"
+  )
+```
+
+
+
 
 
 ## Policy plots
