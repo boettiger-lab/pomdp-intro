@@ -377,16 +377,19 @@ sims %>%
 
 ## POMDP simulations overestimating measurement uncertainty
 
+While the POMDP approach requires an estimate of the measurement error, the precise distribution of measurement errors will itself be unknown in most cases.  However, the POMDP approach is quite robust to overestimation of the measurement error.  As an extreme example of this, we consider the case where the POMDP solution assumes the largest measurement error level considered here, $\sigma_m = 0.15$, while performing simulations in which measurements occur without error. In such a scenario, the 
+
 ```{r pomdp_sims}
 set.seed(12345)
-
+true <- 3 # sigma_g = 0.15, sigma_m = 0
+source("../appendix/pomdp_overestimate.R")
 pomdp_overest_sims <- 
   map2_dfr(models, alphas, function(.x, .y){
     pomdp_overestimates(transition = .x$transition, 
             model_observation = .x$observation, 
             reward = .x$reward, 
             discount = discount, 
-            true_observation <- models[[true]]$observation,
+            true_observation = models[[true]]$observation,
             x0 = x0,
             Tmax = Tmax,
             alpha = .y,
@@ -398,6 +401,37 @@ pomdp_overest_sims <-
 ```
 
 
+
+Combine the resulting data frames
+
+```{r}
+
+overest <-
+bind_rows(static_sims, pomdp_overest_sims) %>%
+  left_join(meta, by = "scenario") %>%  ## include scenario information (sigmas; etc)
+  mutate(state = states[state], action = actions[action]) %>%
+  select(time, state, rep, method, sigma_m, sigma_g, value) %>%
+  group_by(time, method, sigma_m, sigma_g) %>%
+  summarise(mean = mean(state), sd = sd(state)) %>%
+  filter(sigma_g == "0.15") %>% 
+  ungroup()
+
+overest %>% filter(method != "pomdp", sigma_m == "0")  %>%
+  bind_rows(
+  overest %>% filter(method == "pomdp", sigma_m == "0.15")) %>%
+  select(-sigma_m, -sigma_g) %>%
+  mutate(method = fct_recode(method,
+                             "MSY" = "msy",
+                             "CE" = "det",
+                             "TAC" = "pgy",
+                             "POMDP" = "pomdp")) %>%
+  ggplot(aes(time, mean, col=method, fill=method)) + 
+  geom_line(lwd = 1) + 
+  geom_ribbon(aes(ymax = mean + sd, ymin = mean-sd), col = NA, alpha = 0.1) +
+  coord_cartesian(ylim = c(0, 1)) 
+
+
+```
 
 
 

@@ -23,7 +23,7 @@ pomdp_overestimates <-
                               alpha)
     sim$df$rep <- i
     sim
-  }, ...)
+  })
   list(df = do.call(rbind, lapply(sims, `[[`, "df")), 
        state_posterior = do.call(rbind, lapply(sims, `[[`, "state_posterior")))
 
@@ -56,7 +56,7 @@ function (transition,
   
   for (t in 2:Tmax) {
       ## Policy based on model
-      out <- compute_policy(alpha, 
+      out <- sarsop::compute_policy(alpha, 
                             transition, 
                             model_observation, 
                             reward, 
@@ -77,7 +77,7 @@ function (transition,
     
     ## Update belief based on model
     state_posterior[t + 1, ] <- 
-      update_belief(state_posterior[t,], 
+      sarsop:::update_belief(state_posterior[t,], 
                     transition, 
                     model_observation, 
                     obs[t], 
