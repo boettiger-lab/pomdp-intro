@@ -425,6 +425,11 @@ overest %>% filter(method != "pomdp", sigma_m == "0")  %>%
                              "CE" = "det",
                              "TAC" = "pgy",
                              "POMDP" = "pomdp")) %>%
+  write_csv(file.path(log_dir, "overest_sims.csv"))
+```
+
+```{r}
+read_csv(file.path(log_dir, "overest_sims.csv")) %>%
   ggplot(aes(time, mean, col=method, fill=method)) + 
   geom_line(lwd = 1) + 
   geom_ribbon(aes(ymax = mean + sd, ymin = mean-sd), col = NA, alpha = 0.1) +
