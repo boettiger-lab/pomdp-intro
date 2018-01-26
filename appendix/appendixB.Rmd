@@ -1,5 +1,5 @@
 ---
-output: github_document
+output: pdf_document
 ---
 
 # Section 1: Model estimates from data
@@ -10,12 +10,19 @@ Computes model parameter estimates on each `stockid` in RAM (after normalizing d
 #library(printr)
 knitr::opts_chunk$set(message=FALSE, comment="", cache=TRUE)
 ```
-
+  
+```{r libraries, message=FALSE}
+# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
+library(tidyverse)
+library(sarsop)
+library(nimble)
+library(parallel)
+library(gridExtra)
+```
 
 ```{r plotting}
-library(gridExtra)
+## This chunk is optional, just tweaks plot appearance / fonts
 library(ggthemes)
-library(ggplot2)
 library(Cairo)
 library(extrafont)
 library(hrbrthemes)
@@ -24,10 +31,11 @@ extrafont::loadfonts()
 knitr::opts_chunk$set( dev="cairo_pdf")
 hrbrthemes::import_roboto_condensed() 
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
+#palette <- ptol_pal()(6)
+```
 
-palette <- ptol_pal()(6)
+```{r}
 palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45") # berkeley colors
-
 colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
                     c("TAC", "POMDP", "MSY", "CE", 
                       "POMDP: low prior",
@@ -35,16 +43,6 @@ colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"),
                       "biomass",
                       "catch"))
 ```
-
-  
-```{r libraries, message=FALSE}
-# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
-library(tidyverse)
-library(sarsop)
-library(nimble)
-library(parallel)
-```
-
 
 
 ```{r}
@@ -438,6 +436,8 @@ write_csv(sims,file.path(log_dir, "ram_ex.csv"))
 ```
 
 ```{r}
+ram_ex <- read_csv(file.path(log_dir, "ram_ex.csv"))
+
 ram_ex %>%
   filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy", "msy")) %>%
    mutate(model = fct_recode(model,
