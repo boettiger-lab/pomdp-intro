@@ -1,10 +1,8 @@
 ---
-title: "POMDP comparisons across sigma_m, sigma_g"
+title: "Appendix A: Code and supplementary figures for simulation and policy analyis"
 author: "Carl Boettiger"
 date: "`r Sys.Date()`"
-output: 
-  github_document: default
-  pdf_document: default
+output: pdf_document
 ---
 
 
@@ -14,7 +12,8 @@ knitr::opts_chunk$set(comment="", message=FALSE, cache=TRUE)
 
 
 ```{r library, message=FALSE}
-# devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
+## install package first if necessary.
+# devtools::install_github("boettiger-lab/sarsop") 
 library(sarsop)       # the main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)
@@ -22,7 +21,7 @@ library(gridExtra)
 ```
 
 
-```{r optional_plotting_config}
+```{r optional_plotting_config, include=FALSE}
 library(ggthemes)
 library(ggplot2)
 library(Cairo)
@@ -37,8 +36,7 @@ ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
 
 ```{r colors}
 #palette <- ptol_pal()(6)
-palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45") # berkeley colors
-
+palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45")
 colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
                     c("TAC", "POMDP", "MSY", "CE", 
                       "POMDP: low prior",

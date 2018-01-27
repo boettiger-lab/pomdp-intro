@@ -1,10 +1,13 @@
 ---
+title: "Appendix B: Code for analysis comparing to historical data"
+author: "Carl Boettiger"
+date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
 # Section 1: Model estimates from data
 
-Computes model parameter estimates on each `stockid` in RAM (after normalizing data) using nimble. Then, estimate common stock measurement (Bmsy, MSY, PGY).
+Computes model parameter estimates for selected stocks in RAM using NIMBLE. estimate $B_{MSY}$
 
 ```{r aethetics, include=FALSE}
 #library(printr)
@@ -20,7 +23,7 @@ library(parallel)
 library(gridExtra)
 ```
 
-```{r plotting}
+```{r plotting, include = FALSE}
 ## This chunk is optional, just tweaks plot appearance / fonts
 library(ggthemes)
 library(Cairo)
