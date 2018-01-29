@@ -9,9 +9,8 @@ output: pdf_document
 
 Computes model parameter estimates for selected stocks in RAM using NIMBLE. estimate $B_{MSY}$
 
-```{r aethetics, include=FALSE}
-#library(printr)
-knitr::opts_chunk$set(message=FALSE, comment="", cache=TRUE)
+```{r knitr, include=FALSE}
+knitr::opts_chunk$set(comment="", message=FALSE, cache=TRUE, dev="cairo_pdf")
 ```
   
 ```{r libraries, message=FALSE}
@@ -31,20 +30,19 @@ library(extrafont)
 library(hrbrthemes)
 
 extrafont::loadfonts()
-knitr::opts_chunk$set( dev="cairo_pdf")
 hrbrthemes::import_roboto_condensed() 
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
-#palette <- ptol_pal()(6)
-```
 
-```{r}
-palette <- c("#D9661F", "#3B7EA1",  "#6C3302", "#FDB515", "#00B0DA",  "#CFDD45") # berkeley colors
+palette <- c("#D9661F", "#3B7EA1", "#6C3302",
+             "#FDB515", "#00B0DA",  "#CFDD45")
 colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"), 
                     c("TAC", "POMDP", "MSY", "CE", 
                       "POMDP: low prior",
                       "POMDP: medium prior",
                       "biomass",
                       "catch"))
+scale_colour_discrete <- function(...) scale_colour_manual(..., values=colors)
+scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```
 
 
