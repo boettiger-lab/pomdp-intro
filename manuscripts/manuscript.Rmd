@@ -24,15 +24,18 @@ keywords:
 lineno: true
 
 bibliography: citations.bib
+#journal: "The American Naturalist"
+date: "`r Sys.Date()`"
 csl: the-american-naturalist.csl
 output: rticles::elsevier_article
 layout: 3p # review # review = doublespace, 3p = singlespace, 5p = two-column
+header-includes: |
+        \journal{The American Naturalist}
 
 ---
 
-
 ```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=7,  dev="cairo_pdf")
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=7,  dev="cairo_pdf", cache = TRUE)
 library(tidyverse)
 library(gridExtra)
 ```
