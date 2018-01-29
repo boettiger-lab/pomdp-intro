@@ -7,10 +7,10 @@ output: pdf_document
 
 # Section 1: Model estimates from data
 
-Computes model parameter estimates for selected stocks in RAM using NIMBLE. estimate $B_{MSY}$
+Computes model parameter estimates for selected stocks in RAM using NIMBLE.
 
 ```{r knitr, include=FALSE}
-knitr::opts_chunk$set(comment="", message=FALSE, cache=TRUE, dev="cairo_pdf")
+knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf")
 ```
   
 ```{r libraries, message=FALSE}
@@ -24,6 +24,7 @@ library(gridExtra)
 
 ```{r plotting, include = FALSE}
 ## This chunk is optional, just tweaks plot appearance / fonts
+library(printr)
 library(ggthemes)
 library(Cairo)
 library(extrafont)
@@ -48,8 +49,10 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 
 ```{r}
 if(!file.exists("ramlegacy.zip")){
-download.file("https://depts.washington.edu/ramlegac/wordpress/databaseVersions/RLSADB_v3.0_(assessment_data_only)_excel.zip",
-              "ramlegacy.zip")
+download.file(paste0(
+  "https://depts.washington.edu/ramlegac/wordpress/databaseVersions/",
+  "RLSADB_v3.0_(assessment_data_only)_excel.zip"),
+  "ramlegacy.zip")
 }
 ```
 
@@ -101,10 +104,7 @@ examples <- df2 %>%
 
 ```{r}
 ## Model does not estimate sigma_m; data is insufficient to do so.
-## Note that RAM stock estimates are not always direct measurements, can be artifically smooth, underestimating sigma_g
-
 gs_code  <- nimble::nimbleCode({
-    
   r ~ dunif(0, 2)
   K ~ dunif(0, 2)
   sigma ~ dunif(0, 1)
@@ -114,8 +114,6 @@ gs_code  <- nimble::nimbleCode({
     mu[t] <- x[t] + x[t] * r * (1 - x[t] / K) - min(a[t],x[t])
     x[t+1] ~ dnorm(mu[t], sd = sigma)
   }
-
-  
 })
 
 fit_models <- function(fish, code){
@@ -141,7 +139,6 @@ fit_models <- function(fish, code){
   samples <- as.data.frame(as.matrix(Cmcmc$mvSamples))
   burnin <- 1:(0.05 * dim(samples)[1]) # drop first 5%
   samples <- samples[-burnin,1:(length(inits) - 1)] # drop raised vars, burnin
-  
   #gather(samples) %>% ggplot() + geom_density(aes(value)) + facet_wrap(~key, scale='free')
    
   ## Return fit
@@ -165,10 +162,10 @@ fits <- examples %>% do(fit_models(., code=gs_code))
 fits 
 ```
 
-<!--
-Do the estimates make sense?  Consider simulation from models, under this historical harvests, compared to historical trajectories
 
-```{r}
+```{r include = FALSE, eval = FALSE}
+## Do the estimates make sense?  Consider simulation from models, 
+## under this historical harvests, compared to historical trajectories
 examples %>% ungroup() %>%
   select(year, scaled_biomass, scaled_catch, commonname) %>%
   gather(stock, biomass, -year, -commonname) %>%
@@ -176,8 +173,6 @@ examples %>% ungroup() %>%
   geom_line() + facet_wrap(~commonname, scales = "free")
 ```
 
-
--->
 
 ```{r}
 pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g) 
@@ -188,7 +183,7 @@ pars
 
 -------
 
-# Decision Policies
+# Calculations of the Decision Policies for Historical Data
 
 
 ```{r}
@@ -219,8 +214,7 @@ actions <- states
 observations <- states
 ```
 
-
-## All parameter values combinations for which we want solutions
+Consider all parameter values combinations for which we want solutions (both species at each of three possible levels of measurement uncertainty; though we will focus on the `0.1` level for simplicity as overall pattern is the same at `0.15`):
 
 ```{r}
 meta <- expand.grid(commonname = pars$commonname, 
@@ -232,7 +226,7 @@ meta <- expand.grid(commonname = pars$commonname,
 meta
 ```
 
-## Create the models
+Create the model matrices (transition, observation, and reward matrix):
 
 
 ```{r}
@@ -252,7 +246,7 @@ models <-
 ```
 
 
-
+Here's the slowest part: computing POMDP alpha vectors. 
 
 ```{r eval=FALSE}
 dir.create(log_dir)
@@ -293,16 +287,12 @@ system.time(
 meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
   mutate(scenario = as.character(scenario)) %>%
   left_join(
-    ## use the estimated sigma_m, r, K pars recorded in the logged meta.csv.  Technically
-    ## these should be the same as the above, but without random seed re-running the nimble
-    ## code but not re-running these can create mis-matches.  
     select(meta, sigma_m, commonname, scenario),   
     by = c("scenario", "sigma_m", "commonname")) %>% 
   arrange(scenario)
 alphas <- alphas_from_log(meta, log_dir)
 #models <- models_from_log(meta)
 ```
-
 
 
 
@@ -329,7 +319,7 @@ statics <- function(P){
   B_MSY <- S_star
   MSY <- f(B_MSY,0) - B_MSY
   
-  tibble(S_star, F_MSY = MSY / B_MSY, F_PGY = 0.8 * F_MSY, 
+  tibble(S_star, F_MSY = MSY / B_MSY, F_TAC = 0.8 * F_MSY, 
          commonname = P$commonname, N = P$N)
 }
 
@@ -338,7 +328,8 @@ policy_pars <-
   rowwise() %>% 
   do(statics(.))
 ```  
-  Convert example data into discrete index space.
+
+Convert example data into discrete index space.
 
 ```{r}
 index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
@@ -346,44 +337,33 @@ index <- function(x, grid) map_int(x, ~ which.min(abs(.x - grid)))
 ex <- examples %>%
   mutate(biomass = index(scaled_biomass, states),          
          catch = index(scaled_catch, actions))  %>% 
-  left_join(policy_pars) %>% left_join(pars) %>%
+  left_join(policy_pars) %>% 
+  left_join(pars) %>%
   ungroup() 
-ex
 ```
 
-```{r} 
-det_f <- function(S_star, r, K, i) index(pmax(gs(r[[1]],K[[1]])(states,0) - S_star[[1]],0), actions)[i]
-msy_f <- function(F_MSY, i) index(states * F_MSY[[1]], actions)[i]
-pgy_f <- function(F_PGY, i) index(states * F_PGY[[1]], actions)[i]
+Static policy calculations:
 
+```{r} 
+CE_f <- function(S_star, r, K, i) 
+  index(pmax(gs(r[[1]],K[[1]])(states,0) - S_star[[1]],0), actions)[i]
+MSY_f <- function(F_MSY, i) index(states * F_MSY[[1]], actions)[i]
+TAC_f <- function(F_TAC, i) index(states * F_TAC[[1]], actions)[i]
 rescale <- function(x, N) states[x]*N
 
 historical <- ex %>% 
   group_by(commonname) %>% 
-  mutate(det =  det_f(S_star, r, K, biomass),
-         msy =  msy_f(F_MSY, biomass),
-         pgy =  pgy_f(F_PGY, biomass)) %>%
-  select(year, biomass, catch, det, msy, pgy, commonname, N) %>%
+  mutate(CE =  CE_f(S_star, r, K, biomass),
+         MSY =  MSY_f(F_MSY, biomass),
+         TAC =  TAC_f(F_TAC, biomass)) %>%
+  select(year, biomass, catch, CE, MSY, TAC, commonname, N) %>%
   gather(model, stock, -year, -commonname, -N) %>%
   mutate(stock = states[stock] * N) %>% 
   select(-N)
 ```
 
 
-
-## Plots
-
-```{r}
-historical %>%
-  ggplot(aes(year, stock, col=model)) +
-  geom_line(lwd=1) +
-  scale_color_manual(values = c("black", "grey", "#D9661F", "#00B0DA", "#CFDD45")) +
-  facet_wrap(~commonname, scales = "free", ncol=1) + theme_bw()  
-```
-
-
-
-## POMDP historical
+Compute POMDP policy for historical data:
 
 
 ```{r}
@@ -406,7 +386,7 @@ pomdp_sims <-
            .id = "scenario") 
 ```
 
-
+Join records: 
 
 ```{r}
 pomdp_sims <- 
@@ -417,8 +397,6 @@ pomdp_sims <-
 
 ```
 
-
-
 ```{r}
 sims <- pomdp_sims %>% 
   mutate(optimal = states[optimal] * N) %>% # original scale
@@ -427,7 +405,7 @@ sims <- pomdp_sims %>%
   ## treat each sigma_m value as separate 'model'
   mutate(sigma_m = as.factor(sigma_m)) %>%
   mutate(model = recode(sigma_m, 
-                        "0" = "Reed",
+                        "0" = "CE",
                         "0.1" = "POMDP", 
                         "0.15" = "POMDP_0.15")) %>%
   select(-sigma_m) %>%
@@ -436,16 +414,12 @@ sims <- pomdp_sims %>%
 write_csv(sims,file.path(log_dir, "ram_ex.csv"))
 ```
 
+Final plot, as in paper but including MSY:
+
 ```{r}
 ram_ex <- read_csv(file.path(log_dir, "ram_ex.csv"))
-
 ram_ex %>%
-  filter(model %in% c("biomass", "catch", "POMDP", "Reed", "pgy", "msy")) %>%
-   mutate(model = fct_recode(model,
-                             "MSY" = "msy",
-                             "CE" = "Reed",
-                             "TAC" = "pgy"
-                             )) %>%
+  filter(model %in% c("biomass", "catch", "POMDP", "CE", "TAC", "MSY")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
   scale_color_manual(values = colors) +
