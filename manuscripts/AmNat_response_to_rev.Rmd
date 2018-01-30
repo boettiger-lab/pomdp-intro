@@ -19,37 +19,35 @@ Dear Professor Bronstein; Prof Dwyer,
 
 > My recommendation is that manuscript 57722 be declined without prejudice.   The authors use a state of the art computer algorithm known as ``POMDP'' to determine, on the fly, how fisheries should be managed, in terms of the total amount of stock that can be harvested, and the profit accruing from that harvest.   This is an important problem in ecology, and the authors approach appears to offer significant insight.  The reviewers nevertheless point out some important ways in which the text could be improved, and reviewer 1 in particular argues that the authors's approach may be significantly flawed.  These problems would therefore need to be addressed for a revision to be successful.
 
-We appreciate the careful and constructive comments of the editor and reviewers, which have allowed us to re-write the manuscript to both better communicate both the method and broader implications of the results shown here.  We also now address directly the significant differences between the extensive literature on the optimal management of fisheries to
-
-We appreciate the time and effort of reviewer 1 in exploring these results in further simulation, but were unable to understand precisely what the reviewer had implemented. From the description provided, it appears the reviewer's results rather underscore our point about the importance of observation uncertainty, an uncertainty which does not appear to be fully present in the reviewer's simulation, as we discuss below.  In short, if the stock size is unknown (due to measurement uncertainty), how does one enforce the safe-guard that total allowable catch quota or harvest not exceed 90% the stock?  As our work shows, it precisely the presence of such assumptions 
-
-
-
-We have expanded our results to include a comparisons to policies that much more closely resemble the implementation in actual fisheries
-
-
-
-and believe our revisions should now address each of the concerns raised.  In particular, 
-
+We appreciate the careful and constructive comments of the editor and reviewers, which have allowed us to re-write the manuscript to both better communicate both the method and broader implications of the results shown here.  
 
 
 > One of Reviewer 2's main comments is that the article focusses too narrowly on fisheries and stock assessment, and the Reviewer argues that the authors could instead frame their work more broadly in terms of applied ecology in general, perhaps by citing problems of measurement uncertainty in other applications besides fisheries.  These points are very well taken, especially given that The American Naturalist covers biological problems in a very broad sense.   For the work to be of general interest to the readership of The American Naturalist, the authors would therefore have to explain more clearly the relevance of their work to applied ecology in general.
 
 
-we now emphasize that making decisions in face of imperfect information is by no means an issue isolated solely to fisheries, and that our focus on fisheries example is merely for the same reason introductory texts on ecological management have so often turned to fisheries: no other example of ecological managment has a rich or foundational a history in our understanding of ecosystem management and decision-theory.  We now discuss the broader concept of uncertain decision making in the introduction and highlight examples where these issues most readily appear in so many other ecological applications.
+we now emphasize that making decisions in face of imperfect information is by no means an issue isolated solely to fisheries, and that our focus on fisheries example is merely for the same reason introductory texts on ecological management have so often turned to fisheries: no other example of ecological managment has a rich or foundational a history in our understanding of ecosystem management and decision-theory.  We now discuss the broader concept of uncertain decision making in the introduction and highlight examples where these issues most readily appear in so many other ecological applications. 
 
-> Reviewer 1 in contrast makes a  specific and detailed comment about a very particular issue.   In discussing this comment, an important point is that I am sufficiently far from being a fisheries biologist that I am not entirely understand sure that I understand the objection, emphasizing the importance of Reviewer 2's comment that The American Naturalist is a general interest journal, not a fisheries journal.  This caveat aside, my understanding of Reviewer 1's comment is that the Reviewer ran a set of simulations which were essentially the same as in the manuscript, except that the Reviewer explicitly excluded the possibility of 90 percent harvest of the stock population.  In the reviewer's simulations, the optimal escapement level is lower in the presence of measurement error, whereas in fig. 5 of the manuscript,  the optimal escapement level is instead higher in the presence of measurement error.
+> Reviewer 1 in contrast makes a  specific and detailed comment about a very particular issue.   In discussing this comment, an important point is that I am sufficiently far from being a fisheries biologist that I am not entirely understand sure that I understand the objection, emphasizing the importance of Reviewer 2's comment that The American Naturalist is a general interest journal, not a fisheries journal.  This caveat aside, my understanding of Reviewer 1's comment is that the Reviewer ran a set of simulations which were essentially the same as in the manuscript, except that the Reviewer explicitly excluded the possibility of 90 percent harvest of the stock population.  In the reviewer's simulations, the optimal escapement level is lower in the presence of measurement error, whereas in fig. 5 of the manuscript,  the optimal escapement level is instead higher in the presence of measurement error.  Reviewer 1's description of their simulations is brief enough that I would not expect the authors to build their entire revision around an effort to respond to this comment.   If the authors have indeed allowed for 90 percent harvest, however, it is important that they test whether their results are different if they place an upper limit on the fraction of the stock that they allow to be harvested.   I also agree with Reviewer 1's comment that the methods are not that easy to follow.  That said, to my understanding, the escapements in fig. 2 are not constant, and so Reviewer 1's comment that a constant escapement cannot lead to the collapse of a stock seems to me to be irrelevant, but again I may be wrong, and my uncertainty emphasizes the lack of clarity in the writing, especially with respect to the Methods.   
+
+The simulations performed by Reviewer 1 are not the same as in our example, but are nevertheless very enlightening as they highlight a very important issue that is far more general than fisheries.  Reviewer 1's simulations have provided another example of the paradox of measurement error that we now highlight much more clearly in the previous work of @Reed1979, @Clark1986, @Sethi2005, and others: Reviewer 1 makes a "simplifying assumption" and paradoxically concludes that in the face of higher measurement error we should increase fishing pressure!  A key conclusion from our analysis is the demonstration that this common but paradoxical claim is in fact false. 
+
+To assume harvest cannot exceed the standing stock is to assume (for any model without an Allee threshold) that humans cannot collapse a stock regardless of how hard they fish. Though this assumption that extinction is impossible is often mathematically convenient, we are hardly the first to argue that it is both biologically unrealistic and can lead to ill-advised management practices
+
+> An important tacit assumption in Reed’s analysis, as in the other works referred
+to above, is that the recruitment level X is known accurately prior to the harvest decision, [...] In the case of fishery resources, the stock level X is almost never known very accurately, owing to the difficulty of observing fish in their natural environment.
 
 
-We are afraid that Reviewer 1's concern is mistaken
 
 
-> Reviewer 1's description of their simulations is brief enough that I would not expect the authors to build their entire revision around an effort to respond to this comment.   If the authors have indeed allowed for 90 percent harvest, however, it is important that they test whether their results are different if they place an upper limit on the fraction of the stock that they allow to be harvested.
+The reviewer's approach is not essentially equivalent to our approach; as the editor already observes we do not assume that the optimal policy will involve constant escapement, nor does it.  Nor is the reviewer's simulation the same as in @Clark1986 or @Sethi2005, since neither of those results involve constant escapement, though they 
+
+
+Reviewer 1 proposes that we assume local extinction is impossible regardless of inaccuracies in measurement error.  This assumption has been previously made in the literature for mathematical convenience, as we discuss it is in fact 
+
+
+
 
 When measurements are *uncertain*, it is impossible *not* to allow for a 90% harvest of the stock.  Indeed, this cuts to  the very heart of why measurement uncertainty in *decisions* is so important!  If X is a random number from a log-normal distribution of parameters mu and sigma, how can one choose a number Y to be certain that Y < 90% X?   Y = 0 is the only (non-negative) solution; you cannot be sure that *any* harvest level is guatenteed to be safe.  
-
-
-> I also agree with Reviewer 1's comment that the methods are not that easy to follow.  That said, to my understanding, the escapements in fig. 2 are not constant, and so Reviewer 1's comment that a constant escapement cannot lead to the collapse of a stock seems to me to be irrelevant, but again I may be wrong, and my uncertainty emphasizes the lack of clarity in the writing, especially with respect to the Methods.   
 
 The editor is absolutely correct, POMDP solutions do not result in a constant escapement, as we stated.  Unfortunately, Reviewer 1 does not provide any description of the methods they used.  
 
@@ -84,6 +82,17 @@ The one difference I made was I did not let the harvest exceed 90% of the total 
 seems reasonable as I know of few fisheries where 90% of the population could be harvested in a single
 year.
 
+We thank the Reviewer for this careful parallel investigation, which was very useful in focusing the manuscript on some of the key results.  
+
+While based only on this description provided we are not able to precisely replicate Reviewer 1's analysis, we can observe serveral important ways in which it is quite different to the optimization problem we consider.  
+
+
+
+
+We have now completely re-written our description and provided both a stand-alone R package and fully executable scripts implementing our methods.  However, we do not attempt to provide a stand-alone introduction to Partially Observed Markov Decision Processes (POMDPs), which, all though less well known in ecology and evolutionary studies than their (fully observed) MDP cousins (which ecologists commonly refer to by their solution method, Stochastic Dynamic Programming or SDP)
+
+
+
 As the editor observes, this short discription does not permit us to properly understand what the reviewer has done to obtain
 different results, but as the editor already noted, the comments make it clear that it is not analgous to our approach,
 since our approach does not assume nor does it find a constant escapement policy to be optimal.  
@@ -116,9 +125,12 @@ that was observed long before our paper and is well established by the literatur
 If a fixed escapement policy is applied to a measurement that is uncertain, the true stock will be somewhat
 larger or somewhat smaller than the observed value, and thus the true escapement can be somewhat smaller
 or somewhat larger than the 'target' escapement.  Without perfect measurements, it is clearly impossible
-to achieve the target escapement exactly.  Overestimates of the stock size can lead to stock collapse
+to achieve the target escapement exactly. If, by chance, a string of consecutive measurements repeatedly over-estimates
+the current stock size, a constant-escapement strategy will repeatedly over-harvest the stock.
 
-Without perfect measurements, the true escapement will vary under a  
+In a model without an Allee effect, such as the classic Gordon-Schaefer model we focus on here, successive over-harvesting
+can reduce a stock to an
+
 
 
 The novelty of our result is how to deal with this issue.
@@ -129,7 +141,13 @@ caveats that target harvest rate declines when stocks drop below a target stock 
 salmon stocks are managed with an escapement goal, but they are not in any sense common or the
 default in marine fisheries management.
 
-The reviewer is entirely correct about this -- while a rigorous constant escapement policy shuts down
+The reviewer is entirely correct about this, and we greatly appreciate the reviewer raising this important issue.
+In addition to the previous analysis which focused only on comparison to a constant escapement policy, we now
+also include comparisons to a more realistic "Total Allowable Catch", or TAC strategy.  
+
+
+
+-- while a rigorous constant escapement policy shuts down
 all harvest below B_MSY (the constant escapement level), most fisheries actually continue to harvest
 even when the stock drops below the target stock size, though potentially at some decreasing rate,
 and do not shut down harvest until the population is significantly below this level, commonly B_MSY / 2, if at all.
@@ -141,9 +159,6 @@ Because these policies permit harvesting below B_MSY, it is not surprising that 
 suseptible 
 
 
-Moreover, many fisheries do not
-
-
 
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -151,6 +166,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Reviewer #2:
 
 > In this clearly written paper the authors show that fish population dynamic models that ignore measurement error can result in significant overharvesting, decreased economic returns, and the potential for complete collapse of the stock. The key advance is the use of an algorithm for partially observed Markov decision processes (POMDP) to provide a complete solution rather than relying upon inferences from a deterministic model or a model of optimal control that does not update belief states during each time step.
+
+
 
 > The treatment of this issue is remarkably comprehensive with respect to structural uncertainty of the model formulation. In fact, the authors in some way bury what I see as the lead in the Appendix. They include analysis of a population subject to an Allee effect, and produce the same general conclusion as they do via analysis of models with more standard dynamics: the POMDP approach is less likely to cause overharvest and population collapse than alternative approaches, even if the location of the unstable steady state population size (tipping point) is unknown. This finding is very important given the increasingly voluminous literature on thresholds and tipping points, suggesting that proper accounting for measurement uncertainty may be a practical alternative to investing more in reducing such uncertainty in the budget-constrained world of natural resource management.
 
@@ -162,29 +179,16 @@ We thank the reviewer for this careful and constructive review, and agree entire
 
 > The authors mischaracterize the extent to which measurement uncertainty is left untreated in stock assessments. Dichmont et al. 2016 (Fisheries Research) provide a nice review of how some of these measurement uncertainty issues are treated in practice in US stock assessments, and an entry point to the literature. If the authors intend to focus on theoretical models and general solutions for population dynamics, their assertion about failure to incorporate measurement uncertainty completely may be valid but this should be clarified.
 
-We had no intention of suggesting that measurement uncertainty was under-represented in stock assessments; indeed it is precisely the *prevalance* with which stock assessment models account for uncertainty that motivates 
+We had no intention of suggesting that measurement uncertainty was under-represented in *stock assessments*; indeed it is precisely the *prevalance* with which stock assessment models account for uncertainty that motivates this work.  We have extensively revised the manuscript to be much clearer on this point.  Our assertion is that these estimates of the uncertainty associated with a measurement of the stock size to which the reviewer refers are not properly accounted for in the process of setting a quota. 
 
 
 > Unlike the classic pretty good yield paper mentioned in the paper (line 440), the authors do not adequately address how conservative harvest is likely to be met with opposition by harvesters and how this issue can be addressed directly by their analysis. 
 
 
-This is an excellent point which we now discuss properly. Our approach highlights that strategies such as Pretty Good Yield, taking 80% of the maximum sustainable yield, are not sufficient solutions to the challenge of measurement uncertainty, since they are still based on fundamentally deterministic premises.
+This is an excellent point which we now develop in the discussion:
 
-
-As our analysis shows, unless it is possible to be certain beyond any shadow of a doubt that one has
 
 How do we determine the maximum sustainable yield in the first place?  This number comes from a deterministic stock-recruitment model.  In stochastic models, and even in many deterministic models with age and stage structure, there is no such thing as a maximum sustainable yield, since the optimal yield must fluctuate with the population dynamics.  But at least in those cases one can reasonably assert an average 
-
-Stock assessments give us 
-
-
-
-Measurement errors accumulate.  
-
-Pretty Good Yield, taking 80% of the maximum sustainable yield, reflects the same 
-
-
-is defined as a percentage of maximum sustainable yield, which is an essentially deterministic concept.  It is impossible to be sure that 
 
 
 > Similarly, rather than dismiss management strategy evaluation as a less preferable alternative to the optimal control approach taken here, it would be nice to see the authors include a formal contrast. Might the offline POMDP approach be framed this way and results inferred without additional analyses? This would be nice because in the real world, optimal control with annual updating of harvest regulations (the POMDP approach) may not practical. The offline POMDP seems more realistic, perhaps with an online phase implemented such that belief states could be updated in 5-10 year intervals.
@@ -202,9 +206,8 @@ Excellent observation! We have added the following line to emphasize this more c
 
 > In several places the authors use loose language by referring to marine ecosystem dynamics when in fact they are treating population dynamics.
 
-Thank you, fixed. (TBD)
+Agreed. 
 
 > The authors discuss volatility of different solutions and would be served well to quantify it. E.g., lines 365-369
 
-Thank you, fixed (TBD)
 
