@@ -1,6 +1,5 @@
 ---
 title: "POMDP comparisons across sigma_m, sigma_g"
-author: "Carl Boettiger"
 date: "`r Sys.Date()`"
 output: 
   github_document: default
@@ -272,7 +271,7 @@ sims <- bind_rows(static_sims, pomdp_sims) %>%
     left_join(meta) %>%    ## combine output with scenarios
     mutate(state = states[state], action = actions[action]) # index -> value
 
-write_csv(sims, "appendix_files/sims.csv")
+write_csv(sims, file.path(log_dir, "sims.csv"))
 ```
 
 
@@ -303,7 +302,7 @@ policy_table <- tibble(state = 1:length(states)) %>%
   mutate(harvest = actions[harvest], state = states[state]) %>%
   mutate(escapement = f(state,harvest))
 
-write_csv(policy_table, "appendix_files/policy_table.csv")
+write_csv(policy_table, file.path(log_dir, "policy_table.csv"))
 ```
 
 Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (deterministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  

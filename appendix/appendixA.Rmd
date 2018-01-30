@@ -1,6 +1,5 @@
 ---
 title: "Appendix A: Code and supplementary figures for simulation and policy analyis"
-author: "Carl Boettiger"
 date: "`r Sys.Date()`"
 output: 
   pdf_document:

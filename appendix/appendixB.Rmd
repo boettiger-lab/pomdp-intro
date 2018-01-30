@@ -1,6 +1,5 @@
 ---
 title: "Appendix B: Code for analysis comparing to historical data"
-author: "Carl Boettiger"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
