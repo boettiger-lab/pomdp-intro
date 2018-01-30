@@ -434,7 +434,7 @@ df$high <- high$policy
 
 pomdp_policies <- df %>% 
   select(-value) %>% 
-  rename(uniform = policy) %>% 
+  dplyr::rename(uniform = policy) %>% 
   gather(policy, harvest, -state) %>%
   mutate(state = states[state], 
          harvest = actions[harvest]) %>%
