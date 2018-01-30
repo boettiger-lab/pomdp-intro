@@ -44,14 +44,14 @@ header-includes: |
 ---
 
 ```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, fig.width=7, fig.height=7,  dev="cairo_pdf", cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 library(tidyverse)
 library(gridExtra)
 ```
 
 ```{r optional_plot_fonts, message=FALSE}
 library(ggplot2)
-library(Cairo)
+#library(Cairo)
 library(extrafont)
 library(hrbrthemes)
 extrafont::loadfonts()
