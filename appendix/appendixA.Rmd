@@ -16,10 +16,10 @@ knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, de
 ```
 
 
-The POMDP calculations presented here are performed using the `sarsop` R package, which we have written to provide a general purpose implementation of the SARSOP algorithm of @Kurniawati2008. The version used in this analysis can be installed from GitHub using the command: `devtools::install_github("boettiger-lab/sarsop@v0.5.0")`.  
+The POMDP calculations presented here are performed using the `sarsop` R package, which we have written to provide a general purpose implementation of the SARSOP algorithm of @Kurniawati2008. The version used in this analysis can be installed from GitHub using the command: `devtools::install_github("boettiger-lab/sarsop@0.5.0")`.  
 
 ```{r library, message=FALSE}
-devtools::install_github("boettiger-lab/sarsop@v0.5.0")
+#devtools::install_github("boettiger-lab/sarsop@0.5.0")
 library(sarsop)       # Our main POMDP package
 library(tidyverse)    # for munging and plotting
 library(parallel)     
@@ -373,7 +373,7 @@ While the POMDP approach requires an estimate of the measurement error, the prec
 ```{r overest}
 set.seed(12345)
 true <- 3 # sigma_g = 0.15, sigma_m = 0
-source(system.file("examples/pomdp_overestimate.R", package="sarsop")) # portable example code
+source(system.file("examples/pomdp_overestimates.R", package="sarsop")) # portable example code
 pomdp_overest_sims <- 
   map2_dfr(models, alphas, function(.x, .y){
     pomdp_overestimates(transition = .x$transition, 
