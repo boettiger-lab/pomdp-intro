@@ -2,29 +2,27 @@
 title: "Appendix A: Code and supplementary figures for simulation and policy analyis"
 author: "Carl Boettiger"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 2
 bibliography: ../manuscripts/citations.bib
 
 ---
 
-# Overview
-
-1. Model definition:
-2. Deterministic Solutions
-3. Discretization and the POMDP solution
-4. Simulation 
 
 ```{r knitr, include=FALSE}
-knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf")
+knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf", echo=TRUE)
 ```
 
 
+The POMDP calculations presented here are performed using the `sarsop` R package, which we have written to provide a general purpose implementation of the SARSOP algorithm of @Kurniawati2008. The version used in this analysis can be installed from GitHub using the command: `devtools::install_github("boettiger-lab/sarsop@v0.5.0")`.  
+
 ```{r library, message=FALSE}
-## install package first if necessary.
-# devtools::install_github("boettiger-lab/sarsop") 
-library(sarsop)       # the main POMDP package
+devtools::install_github("boettiger-lab/sarsop@v0.5.0")
+library(sarsop)       # Our main POMDP package
 library(tidyverse)    # for munging and plotting
-library(parallel)
+library(parallel)     
 library(gridExtra)
 ```
 
@@ -63,7 +61,7 @@ log_dir <- "../data/observe_harvest_recruit" # Store the computed solution files
 
 
 
-# Basic deterministic model
+# Definitions: Population Model and Utility function
 
 ```{r}
 r <- 0.75
@@ -77,7 +75,7 @@ f <- function(x, h){
 }
 ```
 
-Utility (reward) function.  (Note that setting a smaller discount will take longer to converge to smooth POMDP solution, but result in `S_star` closer to the simple `B_MSY`.)  
+A simply utility (reward) function: a fixed price per fish with no cost to fishing.  Alternate models can easily be considered, we focus on this simple utility throughout as this is the choice typically focused on in the optimal control literature, implicitly assumed by the basic MSY model, and does not change the general results.  Note that setting a smaller discount will take longer to converge to smooth POMDP solution, but result in `S_star` closer to the simple `B_MSY`.
 
 ```{r}
 reward_fn <- function(x,h) pmin(x,h)
@@ -85,16 +83,15 @@ discount <- 0.95
 ```
 
 
-# Calculating MSY & TAC
+# Calculating MSY, TAC, and CE
 
-This uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.  (Note that this also depends on the discount rate since future profits are worth proportionally less than current profits).
+The approach below uses a generic optimization routine to find the stock size at which the maximum growth rate is achieved.  (Note that this also depends on the discount rate since future profits are worth proportionally less than current profits).
 
 ```{r}
 ## A generic routine to find stock size (x) which maximizes 
 ## growth rate (f(x,0) - x, where x_t+1 = f(x_t))
 S_star <- optimize(function(x) -f(x,0) + x / discount, 
                    c(0, 2*K))$minimum
-S_star
 ```
 
 
@@ -161,8 +158,9 @@ det_sims %>%
 
 -----------
 
+# Solving the POMDP problem
 
-#  Introduce a discrete grid
+##  Introduce a discrete grid
 
 ```{r}
 ## Discretize space
@@ -187,9 +185,9 @@ policies <- data.frame(
 
 
 
-# POMDP Model
+## Define the POMDP matrices
 
-We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values.  (We consider `sigma_g = 0.02` rather than precisely zero here to avoid a degeneracy in the discretized tranisition matrix. Calculations for the precise deterministic solution can be solved without discretization as shown above, and match the results of this nearly-zero nosie level in the discrete simulation, as expected.)
+We compute POMDP matrices for a range of `sigma_g` and `sigma_m` values.  (We consider `sigma_g = 0.02` rather than precisely zero here to avoid a degeneracy in the discretized transition matrix. Calculations for the precise deterministic solution can be solved without discretization as shown above, and match the results of this nearly-zero noise level in the discrete simulation, as expected.)
 
 
 ```{r}
@@ -219,7 +217,7 @@ models <-
 ```
 
 
-## POMDP solution
+## Compute the POMDP solution
 
 The POMDP solution is represented by a collection of alpha-vectors and values, returned in a `*.policyx` file.
 Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
@@ -268,7 +266,7 @@ alphas <- alphas_from_log(meta, log_dir)
 
 # Simulations
 
-Having calculated the POMDP solution in terms of these `alpha` vectors, we can easily compute the POMDP policy for any given prior and update the prior given further observations according to Bayes rule.  We assume a uniform prior belief at the start of the POMDP simulation.  These tasks are perfromed by the `sim_pomdp` fucntion. Simulating the static strategies (CE, MSY, TAC) is easier, since the policy is uniquely determined by the observed state; we simply need to simulate the stochastic growth and process and measurement with error at each time step an then compute the corrsponding policy. The `sim_pomdp` function performs such static simulations when given a pre-specified policy instead of a set of `alpha` vectors.  
+Having calculated the POMDP solution in terms of these `alpha` vectors, we can easily compute the POMDP policy for any given prior and update the prior given further observations according to Bayes rule.  We assume a uniform prior belief at the start of the POMDP simulation.  These tasks are performed by the `sim_pomdp` function. Simulating the static strategies (CE, MSY, TAC) is easier, since the policy is uniquely determined by the observed state; we simply need to simulate the stochastic growth and process and measurement with error at each time step an then compute the corresponding policy. The `sim_pomdp` function performs such static simulations when given a pre-specified policy instead of a set of `alpha` vectors.  
 
 ## Simulating the static policies under uncertainty
 
@@ -317,7 +315,7 @@ write_csv(sims, file.path(log_dir, "sims.csv"))
 ```
 
 
-##  Figure S2
+##  Figure S2: Full simulation plots
 
 We the results varying over different noise intensities, `sigma_g`, and `sigma_m`.  Note that Figure 1 of the main text shows only the case of `sigma_g = 0.15`, `sigma_m = 0.1` and omits MSY to simplify the presentation.
 
@@ -375,7 +373,7 @@ While the POMDP approach requires an estimate of the measurement error, the prec
 ```{r overest}
 set.seed(12345)
 true <- 3 # sigma_g = 0.15, sigma_m = 0
-source("../appendix/pomdp_overestimate.R")
+source(system.file("examples/pomdp_overestimate.R", package="sarsop")) # portable example code
 pomdp_overest_sims <- 
   map2_dfr(models, alphas, function(.x, .y){
     pomdp_overestimates(transition = .x$transition, 
@@ -398,7 +396,6 @@ pomdp_overest_sims <-
 Combine the POMDP simulations results from over-estimating measurement error with the previous results from the static policies for comparison:
 
 ```{r}
-
 overest <-
 bind_rows(static_sims, pomdp_overest_sims) %>%
   left_join(meta, by = "scenario") %>%  ## include scenario information (sigmas; etc)
@@ -413,7 +410,6 @@ overest %>% filter(method != "POMDP", sigma_m == "0")  %>%
   bind_rows(
   overest %>% filter(method == "POMDP", sigma_m == "0.15")) %>%
   select(-sigma_m, -sigma_g) %>%
-
   write_csv(file.path(log_dir, "overest_sims.csv"))
 ```
 
@@ -423,15 +419,15 @@ read_csv(file.path(log_dir, "overest_sims.csv")) %>%
   geom_line(lwd = 1) + 
   geom_ribbon(aes(ymax = mean + sd, ymin = mean-sd), col = NA, alpha = 0.1) +
   coord_cartesian(ylim = c(0, 1))
-
-
 ```
 
 --------
 
 # Policy plots
 
+## Static policies
 
+First we gather the static policies (CE, TAC, MSY) into a table and convert into terms of harvest and escapement.  
 
 ```{r}
 policy_table <- tibble(state = 1:length(states)) %>%
@@ -439,41 +435,15 @@ policy_table <- tibble(state = 1:length(states)) %>%
   gather(policy, harvest, -state) %>%
   mutate(harvest = actions[harvest], state = states[state]) %>%
   mutate(escapement = state - harvest)
-
 ```
 
-Note that when recruitment occurs before harvest, $f(x) - h$, to get to $X_t = B_{MSY}$ as fast as possible, we actually want to harvest a little bit when X is below $B_{MSY}$, so that rather than over-shooting $B_{MSY}$ (CEerministic) recruitment would land us right at it $B_{MSY}$.  This corresponds to constant escapement.  The discrete grid makes these appear slightly stepped.  
+TAC harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, TAC and MSY solutions never go to zero.  The discrete grid makes these appear slightly stepped.  
 
-Note that the deterministic solution crosses the MSY solution at an observed value of $B_{MSY}$ (i.e. $K/2 = 0.5$).  TAC harvests are always smaller than MSY harvests, but unlike the deterministic optimal solution, TAC and MSY solutions never go to zero.  
+## Policies under uncertainty: S = D
 
+Because @Reed1979 has proven that the optimal escapement in the stochastic case is equivalent to the deterministic case, $S = D$, we have simply relied on the deterministic calculation for constant escapement.  We can instead calculate the optimally policy for such a stochastic but fully observed Markov Decision Process (MDP) directly given the discritized model transition matrix using Stochastic Dynamic Programming (SDP).  @Reed1979 essentially tells us that for small growth noise (satisfying or approximately satisfying Reed's self-sustaining condition) that the stochastic optimal policy is equal to the deterministic optimal policy.  We can confirm this numerically as follows.
 
-```{r fig.width = 5, fig.height=7}
-h_plot <- policy_table %>% 
-  ggplot(aes(state, harvest, col=policy)) + 
-  geom_line(lwd=1)  + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8))  +
-  theme(legend.position = "none")
-  
-
-e_plot <- policy_table   %>% 
-  ggplot(aes(state, escapement, col=policy)) + 
-  geom_line(lwd=1) + 
-  coord_cartesian(xlim = c(0,K), ylim = c(0, .8)) +
-  theme(legend.position = "bottom")
-
-gridExtra::grid.arrange(h_plot, e_plot, layout_matrix = rbind(1,2))
-```
-
-When recruitment happens before harvest, escapement is $f(x_t) - h_t$, not $x_t - h_t$.  The effect of a continuous function map $f$ on a discrete grid is also visible as slight wiggles when we plot in terms of escapement instead of harvest (as is common in the optimal control literature in fisheries, e.g. @Sethi2005).  
-
-Under the optimal solution, escapement is effectively constant at $B_{MSY} = 0.5$: for all states above a certain size the population is harvested back down to that size. Note that even stocks observed at states slightly below $B_{MSY} = 0.5$ achieve this target escapement, since we are following the classic Graham Shaeffer formulation here where we observe first, then recruitment happens before harvest, and thus we see the population at smaller size than we harvest it.  In classical escapement analysis, observations are usually indexed instead to occur immediately before harvests, and this inflection point occurs right at $B_{MSY}$.
-
-
-### Policies under uncertainty: S = D
-
-In strategies whose policies are shown in the above plots all ignore both stochasticity and measurement error.  If want to compare these to an MDP or POMDP policy, we must specify the level of uncertainty. In the absence of measurement uncertainty this is straight forward.  @Reed1979 essentially tells us that for small growth noise (satisfying or approximately satisfying Reed's self-sustaining condition) that the stochastic optimal policy is equal to the deterministic optimal policy.  We can confirm this numerically as follows.
-
-First we grab the transition matrix we have already defined when `sigma_g = 0.1`, and then solve the Stochastic Dynamic Programming solution (SDP) for the (fully observed) Markov Decision Process (MDP) using the `MDPtoolbox` package:
+First we grab the transition matrix we have already defined when `sigma_g = 0.1`, and then solve the SDP using the `MDPtoolbox` package:
 
 ```{r}
 i <- meta %>% filter(sigma_g == 0.1, sigma_m ==0) %>%
@@ -496,7 +466,7 @@ bind_rows(policy_table,
   labs(caption = "SDP solution when sigma_g = 0.1")
 ```
 
-Repeating this larger stochastic growth `sigma_g = 0.15`, shows only slight deviation from CE ($S > D$, as @Reed1979 proves for sufficiently large noise to violate the self-sustaining criterion.  Technically since our noise model in normally distributed none of our populations are self-sustaining for infinite time, but as these simulations show, in practice that deviation is very small.)
+Repeating this larger stochastic growth `sigma_g = 0.15`, shows only slight deviation from CE ($S > D$, as @Reed1979 proves for sufficiently large noise to violate the self-sustaining criterion.  Technically since our noise model in normally distributed none of our populations are self-sustaining for infinite time, but that deviation is quite small, as seen here.  Note also the solution is still a constant-escapement type.)
 
 
 ```{r}
@@ -517,11 +487,11 @@ bind_rows(policy_table,
 ```
 
 
-### Comparing POMDP Policies
+## Comparing POMDP Policies
 
-The comparison of POMDP policy is yet more complicated, but the POMDP policy cannot be expressed merely in terms of a target harvest (or escapement) level given an estimation of the stock size (state).  The optimal solution for the partially observed system must also reflect all prior observations of the system, not merely the most recent observation, as the system is not Markovian in the observed state variable.  We summarize this history as a prior "belief"" about the state, which is updated according to Bayes rule after each observation.  (Note that @Sethi2005 fails to realize this and plots solutions with measurement uncertainty without reference to the prior, which explains their counter-intuitive finding that increased uncertainty should result in increased harvest rates).  
+The comparison of POMDP policy is yet more complicated, but the POMDP policy cannot be expressed merely in terms of a target harvest (or escapement) level given an estimation of the stock size (state).  The optimal solution for the partially observed system must also reflect all prior observations of the system, not merely the most recent observation, as the system is not Markovian in the observed state variable.  We summarize this history as a prior "belief" about the state, which is updated according to Bayes rule after each observation.  Note that @Sethi2005 plots solutions with measurement uncertainty without any reference to the prior.  Bayes Law tells us that without a statement of prior belief over the true state, $P(x)$ we cannot go from the measurement model that defines the probability of observing $y$ given a true state$x$; $P(y | x)$, into the probability of the true state given the measurement, $P(x | y)$.  Further, this prior $P(x)$ should be updated with respect to each subsequent observation, we cannot simply assume it is a fixed value as @Sethi2005.  This explains their counter-intuitive finding that increased uncertainty should result in increased harvest rates with increased uncertainty.
 
-Let us look at the POMDP solutions under various priors focusing on the case of moderate uncertainty, $\sigma_g = \sigma_m = 0.1$.  (Recall we have already solved the POMDP solution for this model in the simulations above, as defined by the `alpha` vectors, so we can quickly load that solution now.)
+Let us look at the POMDP solutions under various priors focusing on the case of moderate uncertainty, $\sigma_g = 0.15$ and $\sigma_m = 0.1$.  (Recall we have already solved the POMDP solution for this model in the simulations above, as defined by the `alpha` vectors, so we can quickly load that solution now.)
 
 ```{r}
 i <- meta %>% 
@@ -538,7 +508,7 @@ unif_prior = rep(1, length(states)) / length(states) # initial belief
 unif <- compute_policy(alpha, m$transition, m$observation, m$reward,  unif_prior)
 ```
 
-For more realistic set of priors, we will consider priors centered at the target $B_{MSY}$ size (or $S^*$ in the language of Reed), at half $B_{MSY}$ (i.e. $K/4$), and at $\tfrac{3}{4} K$, each with a standard deviation of $\sigma_m = 0.1$ (i.e. the uncertainty around a single observation of a stock at that size.)
+For a representative set of priors, we will consider priors centered at the target $B_{MSY}$ size (or $S^*$ in the language of Reed), at half $B_{MSY}$ (i.e. $K/4$), and at $\tfrac{3}{4} K$, each with a standard deviation of $\sigma_m = 0.1$ (i.e. the uncertainty around a single observation of a stock at that size.)
 
 ```{r}
 prior_star <- m$observation[, which.min(abs(states - S_star)),1]
@@ -585,17 +555,21 @@ recode_policies <-
 
 
 ```{r}
-recode_policies %>%
+p1 <- recode_policies %>%
   ggplot(aes(state, escapement, col = policy)) + 
   geom_line(lwd=1) + 
   coord_cartesian(xlim = c(0,1), ylim=c(0,.8))
+
+p1
 ```
 
 ```{r}
-recode_policies %>%
+p2 <- recode_policies %>%
   ggplot(aes(state, harvest, col = policy)) + 
   geom_line(lwd=1) + 
   coord_cartesian(xlim = c(0,1), ylim=c(0,.6))
+
+p2
 ```
 
 
@@ -625,6 +599,48 @@ p3
 ```
 
 
+## Evolution of the POMDP prior belief
+
+To get a sense of how the prior belief (and consequently the POMDP policy) is continually adapting over the course of a simulation (unlike the static policies), it is instructive to examine a single simulation rather than the ensemble of replicates considered above.  
+
+```{r}
+set.seed(12345)
+Tmax <- 20
+sim <- sim_pomdp(m$transition, m$observation, m$reward, discount, 
+                 unif_prior, x0 = 10, Tmax = Tmax, alpha = alpha)
+```
+
+
+```{r}
+sim$df %>%
+  select(-value) %>%
+  mutate(state = states[state], action = actions[action], obs = observations[obs]) %>%
+  gather(variable, stock, -time) %>%
+  ggplot(aes(time, stock, color = variable)) + 
+  geom_line(lwd=1)  + scale_color_manual(values = unname(colors))
+```
+
+
+Here we plot the evolution of the prior belief in state over the course of the above simulation in increasingly darker curves.  Note that the the beginning belief is uniform, but quickly tightens into a distribution centered around the region of the most recent observation.  Note that this belief distribution never converges: as the true state constantly changes in due to stochasticity in population recruitment, so too does the belief distribution constantly change in response to new observations of that true state.  
+
+```{r}
+sim$state_posterior %>% 
+  data.frame(time = 1:Tmax) %>%
+  filter(time %in% seq(1,Tmax, by = 3)) %>%
+  gather(state, probability, -time, factor_key =TRUE) %>% 
+  mutate(state = states[as.numeric(state)]) %>% 
+  ggplot(aes(state, probability, group = time, alpha = time)) + 
+  geom_line(lwd = 1) + 
+  coord_cartesian(xlim = c(0,1.5))
+  
+```
+
+
+
+
+
+
+
 ```{r include = FALSE}
 policy_df <- all_policies %>% 
   filter(policy %in% c("low", "high", "CE", "TAC")) %>%
@@ -633,11 +649,8 @@ policy_df <- all_policies %>%
                              "POMDP: high prior" = "high"
                              )) 
 policies_w_priors <- right_join(priors, policy_df, by = c("state", "policy"))
-
 write_csv(policies_w_priors, file.path(log_dir, "policies_w_priors.csv"))
-
 ```
-
 
 ```{r fig.width=5, fig.height=7, include = FALSE}
 policies_w_priors %>% 
