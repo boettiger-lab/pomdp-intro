@@ -18,6 +18,8 @@ ggplot2::theme_set(theme_bw())
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 
 options(mc.cores=parallel::detectCores())
+log_dir <- "../data/observe_recruit_harvest" # Store the computed solution files here
+
 ```
 
 
@@ -158,7 +160,6 @@ meta <- expand.grid(sigma_g = c(0.02, 0.1, 0.15),
                     sigma_m = c(0, 0.1, 0.15),
                     stringsAsFactors = FALSE) %>%
         mutate(scenario  = as.character(1:length(sigma_m)))
-log_dir <- "appendix_alphas" # Store the computed solution files here
 meta
 ```
 
@@ -187,10 +188,6 @@ The POMDP solution is represented by a collection of alpha-vectors and values, r
 Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) results in a separate solution file.
 
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
-
-```{r}
-options(mc.cores=1)
-```
 
 
 ```{r eval=FALSE}
