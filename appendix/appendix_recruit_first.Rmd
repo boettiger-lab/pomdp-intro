@@ -6,6 +6,10 @@ output:
   pdf_document: default
 ---
 
+```{r include = FALSE}
+## Not in use, turn rendering off
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE, eval=FALSE)
+```
 
 ```{r message=FALSE}
 # devtools::install_github("boettiger-lab/sarsop")  ## install package first if necessary.
@@ -14,8 +18,6 @@ library(tidyverse)    # for munging and plotting
 library(parallel)
 
 ggplot2::theme_set(theme_bw())
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
-
 options(mc.cores=parallel::detectCores())
 log_dir <- "../data/observe_recruit_harvest" # Store the computed solution files here
 
@@ -434,7 +436,7 @@ df$high <- high$policy
 
 pomdp_policies <- df %>% 
   select(-value) %>% 
-  dplyr::rename(uniform = policy) %>% 
+  rename(uniform = policy) %>% 
   gather(policy, harvest, -state) %>%
   mutate(state = states[state], 
          harvest = actions[harvest]) %>%
