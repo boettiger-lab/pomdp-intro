@@ -25,7 +25,7 @@ library(parallel)
 library(gridExtra)
 ```
 
-```{r optional_plotting_config, include=FALSE}
+```{r optional_plotting_config, cache = FALSE, include=FALSE}
 library(ggthemes)
 library(ggplot2)
 library(Cairo)
@@ -66,7 +66,7 @@ log_dir <- "../data/observe_harvest_recruit" # Store the computed solution files
 r <- 0.75
 K <- 1
 
-## Unlike classic Graham-Schaefer, this assumes harvest 
+## Unlike classic Gordon-Schaefer, this assumes harvest 
 ## occurs right after assessment, before recruitment
 f <- function(x, h){ 
     s <- pmax(x-h, 0) 
@@ -146,7 +146,7 @@ write_csv(det_sims, "../data/observe_harvest_recruit/det_sims.csv")
 With no stochasticity, MSY leads to the same long-term stock size as under the constant escapement rule, but takes longer to get there.  This level is essentially $B_{MSY}$, though because the model considered here implements events in the order: *observe, harvest, recruit*; rather than *observe, recruit, harvest*, we see the stock at the pre-harvest size of $B_{MSY} + H_{MSY}$ (that is, $K/2 + rK/4$).   More conservative rules, such as a harvest set to 80% of MSY result in faster recovery of the stock than under MSY, but slower than under constant escapement.  Due to the reduced maximum harvest rate, such rules lead to stock returning to a value higher than $B_{MSY}$.  
 
 
-```{r fig.width=5, fig.height=5}
+```{r S1, fig.width=5, fig.height=5,fig.cap = "MSY, TAC, and CE policies under deterministic simulation. MSY and CE converge to the same standing biomass long term, but CE reaches this level more quickly.  TAC always harvests less than MSY, resulting in a higher standing biomass but lower long-term yeild. Note that POMDP is identical to CE when no uncertainty is present."}
 det_sims %>%
   ggplot(aes(time, state, col=method)) + 
   geom_line(lwd=1) + 
@@ -223,7 +223,7 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
-```{r eval=FALSE}
+```{r eval=!file.exists(file.path(log_dir, "meta.csv"))}
 dir.create(log_dir)
 system.time(
   alphas <- 
@@ -287,7 +287,7 @@ static_sims <-
 
 ## Simulating the POMDP policies under uncertainty
 
-```{r pomdp_sims}
+```{r pomdp_sims, eval=!file.exists(file.path(log_dir, "pomdp_sims.csv"))}
 set.seed(12345)
 
 unif_prior <- rep(1, length(states)) / length(states)
@@ -299,12 +299,18 @@ pomdp_sims <-
               mutate(method = "POMDP") # include a column labeling method
            },
            .id = "scenario")
+
+write_csv(pomdp_sims, file.path(log_dir, "pomdp_sims.csv"))
 ```
 
 
 We then combine the resulting data frames, transition (mutate) the units from grid indices (`state`, `action` $\in 1 ... N$) to continuous values (`states`, `actions` $\in [0,2]$), and select necessary columns before writing the data out to a file.  
 
 ```{r}
+pomdp_sims <- read_csv(file.path(log_dir, "pomdp_sims.csv")) %>% 
+  mutate(scenario = as.character(scenario))
+
+
 sims <- bind_rows(static_sims, pomdp_sims) %>%
     left_join(meta) %>%  ## include scenario information (sigmas; etc)
     mutate(state = states[state], action = actions[action]) %>%
@@ -318,7 +324,7 @@ write_csv(sims, file.path(log_dir, "sims.csv"))
 
 We the results varying over different noise intensities, `sigma_g`, and `sigma_m`.  Note that Figure 1 of the main text shows only the case of `sigma_g = 0.15`, `sigma_m = 0.1` and omits MSY to simplify the presentation.
 
-```{r}
+```{r S2, fig.width=8, fig.cap="Simulations as in the main text, Figure 1, shown across varying growth noise levels and including MSY strategy for comparison."}
 sims <- read_csv(file.path(log_dir, "sims.csv"), col_types = "inicnnn")
 
 sims  %>%
@@ -339,7 +345,7 @@ sims  %>%
 
 Economic value is shown under varying noise levels under each strategy.
 
-```{r}
+```{r S3, fig.cap="Economic value as in Fig 2 main text, shown across different levels of environmental noise, including MSY strategy."}
 sims %>%
   select(time, value, rep, method, sigma_m, sigma_g) %>%
   filter(sigma_g %in% c("0.1", "0.15")) %>%
@@ -369,7 +375,7 @@ sims %>%
 
 While the POMDP approach requires an estimate of the measurement error, the precise distribution of measurement errors will itself be unknown in most cases.  However, the POMDP approach is quite robust to overestimation of the measurement error.  As an extreme example of this, we consider the case where the POMDP solution assumes the largest measurement error level considered here, $\sigma_m = 0.15$, while performing simulations in which measurements occur without error:
 
-```{r overest}
+```{r overest, eval=!file.exists(file.path(log_dir, "pomdp_overest_sims.csv"))}
 set.seed(12345)
 true <- 3 # sigma_g = 0.15, sigma_m = 0
 source(system.file("examples/pomdp_overestimates.R", package="sarsop")) # portable example code
@@ -388,6 +394,7 @@ pomdp_overest_sims <-
            },
            .id = "scenario"
   )
+write_csv(pomdp_overest_sims, file.path(log_dir, "pomdp_overest_sims.csv"))
 ```
 
 
@@ -395,6 +402,9 @@ pomdp_overest_sims <-
 Combine the POMDP simulations results from over-estimating measurement error with the previous results from the static policies for comparison:
 
 ```{r}
+pomdp_overest_sims <- read_csv(file.path(log_dir, "pomdp_overest_sims.csv")) %>% 
+  mutate(scenario = as.character(scenario))
+
 overest <-
 bind_rows(static_sims, pomdp_overest_sims) %>%
   left_join(meta, by = "scenario") %>%  ## include scenario information (sigmas; etc)
@@ -412,7 +422,7 @@ overest %>% filter(method != "POMDP", sigma_m == "0")  %>%
   write_csv(file.path(log_dir, "overest_sims.csv"))
 ```
 
-```{r}
+```{r S4, fig.cap="over-estimating measurement uncertainty using POMDP, as in Fig 3 main text."}
 read_csv(file.path(log_dir, "overest_sims.csv")) %>%
   ggplot(aes(time, mean, col=method, fill=method)) + 
   geom_line(lwd = 1) + 
@@ -453,7 +463,7 @@ mdp <- MDPtoolbox::mdp_policy_iteration(m$transition, m$reward, discount)
 
 We plot the resulting policy in comparison with the other static policies, which shows that even for such a large noise we get a stochastic constant escapement equal to that of of the deterministic CE calculation: 
 
-```{r}
+```{r S5, fig.cap="The CE policy is identical to the solution found by SDP under very small noise.  MSY and TAC can be seen to correspond to lower escapements at small stock sizes, since they continue to harvest stocks that are below $B_{MSY}$."}
 bind_rows(policy_table,
   data_frame(state = states, 
              policy = "SDP",
@@ -468,7 +478,7 @@ bind_rows(policy_table,
 Repeating this larger stochastic growth `sigma_g = 0.15`, shows only slight deviation from CE ($S > D$, as @Reed1979 proves for sufficiently large noise to violate the self-sustaining criterion.  Technically since our noise model in normally distributed none of our populations are self-sustaining for infinite time, but that deviation is quite small, as seen here.  Note also the solution is still a constant-escapement type.)
 
 
-```{r}
+```{r S6, fig.cap="For large growth noise, the escapement under SDP is still constant but very slightly higher than the (deterministic) CE solution, $S>D$."}
 i <- meta %>% filter(sigma_g == 0.15, sigma_m ==0) %>%
   pull(scenario) %>% as.integer()
 m <- models[[i]]
@@ -557,18 +567,15 @@ recode_policies <-
 p1 <- recode_policies %>%
   ggplot(aes(state, escapement, col = policy)) + 
   geom_line(lwd=1) + 
-  coord_cartesian(xlim = c(0,1), ylim=c(0,.8))
+  coord_cartesian(xlim = c(0,1), ylim=c(0,.8)) +
+  theme(legend.position = "none")
 
-p1
-```
-
-```{r}
 p2 <- recode_policies %>%
   ggplot(aes(state, harvest, col = policy)) + 
   geom_line(lwd=1) + 
-  coord_cartesian(xlim = c(0,1), ylim=c(0,.6))
+  coord_cartesian(xlim = c(0,1), ylim=c(0,.6)) + 
+  theme(legend.position = "bottom")
 
-p2
 ```
 
 
@@ -589,12 +596,14 @@ priors <-
 write_csv(priors, file.path(log_dir, "priors.csv"))
 ```
 
-```{r}
+```{r S7, fig.height=10, fig.width=5}
 p3 <- read_csv(file.path(log_dir, "priors.csv")) %>%
 ggplot(aes(state, prior, col = policy)) + 
   geom_line(lwd=1) +
-  coord_cartesian(xlim = c(0,1))
-p3
+  coord_cartesian(xlim = c(0,1)) + 
+  theme(legend.position = "none")
+
+gridExtra::grid.arrange(p1, p2, p3, ncol=1)
 ```
 
 
@@ -610,7 +619,7 @@ sim <- sim_pomdp(m$transition, m$observation, m$reward, discount,
 ```
 
 
-```{r}
+```{r S8, fig.cap="Observation, True state, and Harvest quota over the course of a single simulation under POMDP management."}
 sim$df %>%
   select(-value) %>%
   mutate(state = states[state], action = actions[action], obs = observations[obs]) %>%
@@ -622,7 +631,7 @@ sim$df %>%
 
 Here we plot the evolution of the prior belief in state over the course of the above simulation in increasingly darker curves.  Note that the the beginning belief is uniform, but quickly tightens into a distribution centered around the region of the most recent observation.  Note that this belief distribution never converges: as the true state constantly changes in due to stochasticity in population recruitment, so too does the belief distribution constantly change in response to new observations of that true state.  
 
-```{r}
+```{r S9, fig.cap="The evolution of the POMDP prior belief distribution over the course of the simulation."}
 sim$state_posterior %>% 
   data.frame(time = 1:Tmax) %>%
   filter(time %in% seq(1,Tmax, by = 3)) %>%

@@ -192,7 +192,7 @@ log_dir <- "../data/ram_ex"
 
 
 ```{r}
-## Classic Graham-Schaefer. Note that recruitment occurs *before* harvest
+## Classic Gordon-Schaefer. Note that recruitment occurs *before* harvest
 gs <- function(r,K){
   function(x, h){ 
     x + x * r * (1 - x / K) - pmin(x,h)
