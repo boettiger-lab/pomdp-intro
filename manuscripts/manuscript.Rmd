@@ -43,7 +43,7 @@ header-includes: |
 ---
 
 ```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,  dev="cairo_pdf", cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,  dev="cairo_pdf", cache = FALSE)
 library(tidyverse)
 library(gridExtra)
 ```
