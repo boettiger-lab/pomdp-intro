@@ -1,8 +1,7 @@
 --- 
 title: "Response to reviewers"
-author:
-  - "Milad Memarzadeh"
-  - "Carl Boettiger"
+date: "`r Sys.Date()`"
+
 output: 
   pdf_document:
     fig_caption: true
