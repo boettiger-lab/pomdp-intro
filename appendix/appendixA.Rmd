@@ -5,9 +5,12 @@ output:
   pdf_document:
     toc: true
     toc_depth: 2
+    keep_tex: true
 bibliography: ../manuscripts/citations.bib
 
 ---
+\renewcommand{\thefigure}{S\arabic{figure}}
+
 
 
 ```{r knitr, include=FALSE}
@@ -17,7 +20,7 @@ knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, de
 
 The POMDP calculations presented here are performed using the `sarsop` R package, which we have written to provide a general purpose implementation of the SARSOP algorithm of @Kurniawati2008. The version used in this analysis can be installed from GitHub using the command: `devtools::install_github("boettiger-lab/sarsop@0.5.0")`.  
 
-```{r library, message=FALSE}
+```{r library, message=FALSE,cache=FALSE}
 #devtools::install_github("boettiger-lab/sarsop@0.5.0")
 library(sarsop)       # Our main POMDP package
 library(tidyverse)    # for munging and plotting
@@ -596,7 +599,7 @@ priors <-
 write_csv(priors, file.path(log_dir, "priors.csv"))
 ```
 
-```{r S7, fig.height=10, fig.width=5}
+```{r S7, fig.height=10, fig.width=5, fig.cap = "policy plots, as in manuscript, figure 4. Here we include a comparison to MSY as well."}
 p3 <- read_csv(file.path(log_dir, "priors.csv")) %>%
 ggplot(aes(state, prior, col = policy)) + 
   geom_line(lwd=1) +
