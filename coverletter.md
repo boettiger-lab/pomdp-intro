@@ -1,2 +1,0 @@
-
-We are pleased to submit our re-written version of "The importance of measurement uncertainty in ecological management" for consideration for publication in *The American Naturalist*. We received very constructive reviews from associate editor Greg Dwyer and two anonymous reviewers, and believe these revisions now address the concerns raised, as detailed in our reply letter. Thank you for considering this submission and we look forward to hearing from you. 
