@@ -6,4 +6,6 @@
 *_cache/
 *.tex
 *.log
+.DS_Store
+*.gz
 
