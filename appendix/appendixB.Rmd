@@ -78,7 +78,7 @@ ramlegacy <-
 ```
 
 
-Let's filter out missing data, non-matching units, and obvious reporting errors (catch exceeding total spawning biomass), then we rescale each series into the 0,1 by appropriate choice of units:
+Let's filter out missing data, non-matching units, and obvious reporting errors (catch exceeding total spawning biomass), then we re-scale each series into the 0,1 by appropriate choice of units:
 
 ```{r}
 df2 <- ramlegacy %>% 

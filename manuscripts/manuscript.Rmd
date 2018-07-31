@@ -101,15 +101,15 @@ The challenge of making decisions under uncertainty is obviously not unique to f
 
 We consider the management problem of setting catch quotas for a marine fishery in the face of imperfect information about the current stock size and uncertainty about future recruitment.  We seek to determine the sequence of actions $h_t$ for $t \in [1, ... \infty]$ that maximize the net present value (discounted sum of all future profits) of the fishery.  We will denote the discount rate $\gamma$. For simplicity we will once again follow classic theory and assume a fixed price for fish, (equivalently, measuring our value in units of discounted fish rather than discounted dollars), though again this assumption is easy to relax. Each year, the manager also obtains an estimate $y_t$ of the true $x_t$ stock size subject to some measurement uncertainty $\xi_t$
 
-$$\begin{equation}
+\begin{equation}
 y_t = \xi_t x_t 
-\end{equation}$$
+\end{equation}
 
 For simplicity we will assume measurement uncertainty is normally distributed with standard deviation $\sigma_m$,  $\xi \sim \mathcal{N}(1, \sigma_m)$.  Given an estimated recruitment model along with this measurement of the stock size, the manager must choose the set of a harvest quotas $\lbrace h_t \rbrace$ for $t \in [0, 1, \infty]$ that maximizes expected long term (net) present value:
 
-$$\begin{equation}
+\begin{equation}
 \max_{ \lbrace h_t \rbrace } \mathbb{E} \left \{ \sum_{t=0}^{\infty} \gamma^t \cdot h_t \right \}
-\end{equation}$$
+\end{equation}
 
 A few subtleties arise in this seemingly simple problem statement that we must address.  First, given our discrete-time formulation of the recruitment process, it is necessary to decide if the measurement $y_t$ happens before or after harvest $h_t$: that is do we: measure, recruit, harvest, or measure, harvest, recruit?  Following convention in the optimal control literature (e.g. [@Reed1979; @Clark1990; @Sethi2005]), we will assume the latter; measurement occurs immediately before harvest, followed by recruitment. 
 
@@ -120,9 +120,9 @@ A second subtly is in the nature of the decision problem itself: note that the m
 
 To facilitate tractability and interpretation, we will focus on the well-studied Gordon-Schaefer model [@Schaefer1954; @Gordon1954] of logistic population growth (stock recruitment),  
 
-$$\begin{equation}
+\begin{equation}
 x_{t+1} = \varepsilon_t (x_t-h_t) r  \left(1 - \frac{(x_t-h_t)}{K}\right) 
-\end{equation}$$
+\end{equation}
 
 where $x_t$ is the current stock size, $h_t$ the harvest chosen that year, with parameters $r$ giving the individual growth rate, and $K$ the carrying capacity and $\varepsilon$ representing stochastic recruitment in a variable environment.  We have written this in terms of $x_t - h_t$ to underscore that we assume the convention of observe, harvest, recruit.  We will assume for simplicity $\varepsilon \sim \mathcal{N}(1, \sigma_g)$.  This and similar models are widely used in large scale analyses across diverse stocks (e.g. [@Costello2016; @Britten2017]), and form the basis for much of bioeconomic theory [@Clark1990]. As such, it will be easier to compare our results against intuition and classic theory, and avoid the possibility of differences arising only because of some particular subtle assumption hidden in a more complex model.
 
