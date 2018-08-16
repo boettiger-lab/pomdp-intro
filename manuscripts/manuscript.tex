@@ -64,9 +64,12 @@
 % Pandoc toggle for numbering sections (defaults to be off)
 \setcounter{secnumdepth}{0}
 % Pandoc header
-\journal{The American Naturalist} \usepackage{lineno} \linenumbers
+\journal{The American Naturalist}
+\usepackage{lineno}
+\linenumbers
 \modulolinenumbers[3]
-\usepackage{setspace} \doublespacing
+\usepackage{setspace}
+\doublespacing
 
 
 
@@ -103,7 +106,7 @@
   implications for how we handle uncertainty in both fisheries and
   ecological management more generally.
   \end{abstract}
-   \begin{keyword} Measurement uncertainty \sep POMDP \sep Decision theory \sep Fisheries \sep Conservation \sep \end{keyword}
+   \begin{keyword} Measurement uncertainty POMDP Decision theory Fisheries Conservation\end{keyword}
  \end{frontmatter}
 
 Imperfect information is ubiquitous in ecological management and
@@ -113,79 +116,79 @@ uncertainty of the future (e.g. Petchey et al. 2015), management
 decisions must also contend with uncertainty of the \emph{present}: How
 many fish are in the sea today? What regions harbor the most fragile
 biodiversity? How have invasive species transformed native communities?
-A recognition of the importance of uncertainty as well as sophisticated
-methods and tools to do so has become increasingly widespread in the
-context of estimating ecological models from available data, thanks in
-large part to the rise of approaches such as Hierarchical Bayesian
+A recognition of the importance of uncertainty has become widespread in
+the context of estimating ecological models from available data, thanks
+in large part to the rise of approaches such as Hierarchical Bayesian
 Modeling, along with convenient software tools for implementing these
 methods. In sharp contrast to that shift, the treatment of uncertainty
 in decisions -- how the uncertainty in models should be reflected in
 scientific recommendations, remains far less developed, more
-qualitative, and under-served by available tools. In this paper we
-illustrate how uncertainty in measurement has a dramatic negative impact
-on outcomes under a variety of these existing approaches, which can be
-avoided through the use of more formal approaches that have since been
-developed in other fields that can likewise be implemented in software
-tools. This insight both resolves a long-standing paradox in fisheries
-management and has important implications for how ecosystem management
-deals with uncertainty more generally.
+qualitative, and under-served by available tools. We illustrate how
+uncertainty in measurement has a dramatic negative impact on outcomes
+under a range of existing approaches, which can be avoided through the
+use of more formal approaches that have since been refined in fields
+such as robotics. This insight both resolves a long-standing paradox in
+fisheries management and has important implications for how ecosystem
+management deals with uncertainty more generally.
 
 Approaches for decision making under uncertainty in ecological systems
-can be divided into two camps: approaches based in ``optimal control''
-and usually favored by natural resource economists, and approaches based
-in heuristic methods such as scenario planning, resilience thinking, and
-precautionary rules of thumb, more commonly found in both ecological
-literature and actual practice (Fischer et al. 2009; Polasky et al.
-2011). While researchers have for some time recognized the need to unify
-the transparent and quantitative algorithmic approach of optimal control
+can be divided into two camps: (1) those based upon ``optimal control''
+solutions, and usually favored by natural resource economists, and (2)
+those based in heuristic methods such as scenario planning, resilience
+thinking, and precautionary rules of thumb, more commonly found in both
+ecological literature and actual practice (Fischer et al. 2009; Polasky
+et al. 2011). While researchers have recognized the need to unify the
+transparent and quantitative algorithmic approach of optimal control
 with the greater complexity and uncertainty of real ecosystems that is
 acknowledged by heuristic methods, computational barriers to doing so
-have hither-to stymied this progress. Here, we illustrate how the
-limitations of these approaches has been manifested in the example of
-fisheries management, and present a new approach that can combine the
-reality of measurement uncertainty and the rigor of optimization to
-resolve a long-standing paradox and suggest a more robust approach to
-management.
+have stymied this progress. We illustrate how the limitations of these
+approaches have manifested in the example of fisheries management, and
+present a new approach that can combine the reality of measurement
+uncertainty and the rigor of optimization to resolve a long-standing
+paradox and suggest a more robust approach to management. We compare the
+results of managing simulated fish stocks under (A) the existing optimal
+control approach, (B) a heuristic approach that is more typical of
+today's management practices, and (C) a newly proposed approach that
+provides a more rigorous treatment of uncertainty.
 
-Fisheries conservation and management has long been both a crucible and
-proving ground for the theory of ecological management more generally,
-including topics such as adaptive management (Walters and Hilborn 1978),
-ecosystem-based management (Levin and Lubchenco 2008) and resilience
-thinking (Holling 1973; May 1977), while also giving rise to the
-sub-discipline of resource economics (Gordon and Press 1954; Schaefer
-1954; Beverton and Holt 1957), thanks to its global relevance, long
-history, and readily available data. Consequently, understanding the
-impact of measurement uncertainty in this rich and well-studied context
-will have implications for both resource management and conservation
-efforts in other domains, many of which draw on concepts established or
-tested in fisheries ecosystems. In particular, the approach here
-illustrates the limitations of both over-simple optimal control
-approaches and rule-of-thumb precautionary approaches, and offers
-instead a more general strategy for dealing with measurement uncertainty
-adaptively.
+The challenge of making decisions under uncertainty is obviously not
+unique to fisheries, and the existing methods we critique here can be
+found in a wide range of population and ecosystem management challenges,
+including fire ecology (Richards et al. 1999), invasive species
+({\textbf{???}}; Blackwood et al. 2010), disease outbreaks (Shea et al.
+2014; Li et al. 2017), and protecting biodiversity (Dee et al. 2017;
+Iacona et al. 2017). Yet fisheries conservation and management has long
+been both a crucible and proving ground for the theory of ecological
+management more generally, including topics such as adaptive management
+(Walters and Hilborn 1978), ecosystem-based management (Levin and
+Lubchenco 2008) and resilience thinking (Holling 1973; May 1977), while
+also giving rise to the sub-discipline of resource economics (Gordon and
+Press 1954; Schaefer 1954; Beverton and Holt 1957), thanks to its global
+relevance, long history, and readily available data. Despite the
+generality of the models and issue of measurement uncertainty considered
+here, any application must be grounded in both the history and context
+of the particular decision problem. In light of this, we begin with a
+brief background on existing decision theory approaches common in
+fisheries management.
 
-We compare the results of managing simulated fish stocks under the
-existing optimal control approach, a heuristic approach that more
-closely resembles today's management practices, and a newly proposed
-approach that provides a more rigorous treatment of uncertainty.
-
-\section{The Decision Problem}\label{the-decision-problem}
+\hypertarget{the-decision-problem}{%
+\section{The Decision Problem}\label{the-decision-problem}}
 
 We consider the management problem of setting catch quotas for a marine
 fishery in the face of imperfect information about the current stock
-size and uncertainty about future recruitment.
+size and uncertainty about future recruitment. We seek to determine the
+sequence of actions \(h_t\) for \(t \in [1, ... \infty]\) that maximize
+the net present value (discounted sum of all future profits) of the
+fishery. We will denote the discount rate \(\gamma\). For simplicity we
+will once again follow classic theory and assume a fixed price for fish,
+(equivalently, measuring our value in units of discounted fish rather
+than discounted dollars), though again this assumption is easy to relax.
+Each year, the manager also obtains an estimate \(y_t\) of the true
+\(x_t\) stock size subject to some measurement uncertainty \(\xi_t\)
 
-We seek to determine the sequence of actions \(h_t\) for
-\(t \in [1, ... \infty]\) that maximize the net present value
-(discounted sum of all future profits) of the fishery. We will denote
-the discount rate \(\gamma\). For simplicity we will once again follow
-classic theory and assume a fixed price for fish, (equivalently,
-measuring our value in units of discounted fish rather than discounted
-dollars), though again this assumption is easy to relax. Each year, the
-manager also obtains an estimate \(y_t\) of the true \(x_t\) stock size
-subject to some measurement uncertainty \(\xi_t\)
-
-\[y_t = \xi_t x_t\]
+\begin{equation}
+y_t = \xi_t x_t 
+\end{equation}
 
 For simplicity we will assume measurement uncertainty is normally
 distributed with standard deviation \(\sigma_m\),
@@ -195,7 +198,9 @@ choose the set of a harvest quotas \(\lbrace h_t \rbrace\) for
 \(t \in [0, 1, \infty]\) that maximizes expected long term (net) present
 value:
 
-\[\max_{ \lbrace h_t \rbrace } \mathbb{E} \left \{ \sum_{t=0}^{\infty} \gamma^t \cdot h_t \right \}\]
+\begin{equation}
+\max_{ \lbrace h_t \rbrace } \mathbb{E} \left \{ \sum_{t=0}^{\infty} \gamma^t \cdot h_t \right \}
+\end{equation}
 
 A few subtleties arise in this seemingly simple problem statement that
 we must address. First, given our discrete-time formulation of the
@@ -222,13 +227,16 @@ Understanding this distinction is key both to understanding the
 differences between current theory and current best practice in
 fisheries management.
 
-\subsection{Population model}\label{population-model}
+\hypertarget{population-model}{%
+\subsection{Population model}\label{population-model}}
 
 To facilitate tractability and interpretation, we will focus on the
 well-studied Gordon-Schaefer model (Gordon and Press 1954; Schaefer
 1954) of logistic population growth (stock recruitment),
 
-\[x_{t+1} = \varepsilon_t (x_t-h_t) r  \left(1 - \frac{(x_t-h_t)}{K}\right) \]
+\begin{equation}
+x_{t+1} = \varepsilon_t (x_t-h_t) r  \left(1 - \frac{(x_t-h_t)}{K}\right) \label{Gordon-Schaefer}
+\end{equation}
 
 where \(x_t\) is the current stock size, \(h_t\) the harvest chosen that
 year, with parameters \(r\) giving the individual growth rate, and \(K\)
@@ -241,13 +249,13 @@ are widely used in large scale analyses across diverse stocks (e.g.
 (Costello et al. 2016; Britten et al. 2017)), and form the basis for
 much of bioeconomic theory (Clark 1990). As such, it will be easier to
 compare our results against intuition and classic theory, and avoid the
-possibility of differences arsing only because of some particular subtle
-assumption hidden in a more complex model.
+possibility of differences arising only because of some particular
+subtle assumption hidden in a more complex model.
 
 It is important to remember that both existing methods we discuss and
 the POMDP approach proposed here can or are already applied to more
 complex models as well, including those with age or stage structure.
-Likewise, while we consider the model and it's parameters as ``given,''
+Likewise, while we consider the model and its parameters as ``given,''
 it should be understood to mean that this in practice comes as the
 result of some model choice and statistical estimation from historical
 data, frequently accounting for uncertainty in both the process and the
@@ -256,7 +264,9 @@ included uncertainty in the model \emph{estimation} in no way excuses us
 from having to also deal once again with that uncertainty in the
 decision process.
 
-\section{Current Theory and Practice}\label{current-theory-and-practice}
+\hypertarget{current-theory-and-practice}{%
+\section{Current Theory and
+Practice}\label{current-theory-and-practice}}
 
 Gordon and Press (1954) and Schaefer (1954) independently showed in the
 same year that the maximum sustainable yield for the model bearing their
@@ -281,8 +291,9 @@ the optimal time-dependent strategy is not one of constant yield, but
 rather of \emph{constant escapement}. We will return to this approach in
 a moment.
 
+\hypertarget{uncertainty-in-practice-msy-tac}{%
 \subsection{Uncertainty in Practice: MSY \&
-TAC}\label{uncertainty-in-practice-msy-tac}
+TAC}\label{uncertainty-in-practice-msy-tac}}
 
 Maximum Sustainable Yield (MSY) remains the basis of international law
 (including the UN, IWC, IATTC, ICCAT, ICNAF; Mace (2001)) and a familiar
@@ -294,7 +305,7 @@ this uncertainty through a series of adjustments that effectively reduce
 the target fishing mortality level to reflect this uncertainty.
 Typically, a stock assessment model provides a best estimate of
 \(B_{MSY}\) and corresponding mortality \(F_{MSY}\) is used to define
-the stock Over-fishing Limit, (OFL). Based on this, a somewhat lower
+the stock Over-Fishing Limit, (OFL). Based on this, a somewhat lower
 level is set as the Allowable Biological Catch (ABC), reflecting
 uncertainty in the stock assessment. To reflect possible uncertainty
 between reported and actual catch, the ABC is reduced somewhat further
@@ -314,7 +325,27 @@ yield than a constant escapement policy, TAC policies continue to
 harvest at non-zero rates even if a stock falls below \(B_{MSY}\), while
 the constant escapement policy does not.
 
-\subsection{Optimal management}\label{optimal-management}
+It is important to note that actual management strategies are quite
+diverse. Our focus on comparisons TAC, MSY, and Constant Escapement (CE,
+also refereed to as MEY, see below) reflects only the subset of current
+practices. Another increasingly common approach to address uncertainty
+in both process and models is known as Management Strategy Evaluation
+(MSE, Smith 1994; {\textbf{???}}; Bunnefeld et al. 2011; Punt et al.
+2016). MSE performs forward simulations under a suite of pre-selected
+candidate strategies to determine which strategy achieves the best
+expected outcomes. Crucially, by limiting the analysis to a suite of
+candidate strategies over a finite number of replicate simulations, this
+approach is able to accommodate substantially greater complexity and
+uncertainty than has been possible with more formal optimal control
+approaches we discuss below. Optimal control solutions rely on dynamic
+programming to consider all possible strategies (all possible sequences
+of harvest under all possible realizations of stock dynamics). As such,
+MSE can be viewed as an approximation to the optimal control solutions
+considered below, a notion that has been formalized in the literature on
+approximate dynamic programming (Nicol and Chadès 2011).
+
+\hypertarget{optimal-management}{%
+\subsection{Optimal management}\label{optimal-management}}
 
 So far, attempts to provide a more formal basis for managing uncertainty
 than the heuristic adjustment of catch limits described above have
@@ -328,38 +359,51 @@ completely shut down the fishery, while above this stock, harvests
 greater than \(H_{MSY}\) will be needed to bring the stock back to
 \(B_{MSY}\). (This intuition must be adjusted slightly in the case of
 economic discounting of future profits, but is otherwise quite general,
-see Clark (1990)). This strategy is known as constant escapement, since
-a constant sock size \(B_{MSY}\) escapes harvest each year. While both
-converge to the same long-term biomass and long-term yield, these
-differences away from equilibrium between the mortality-based approach
-that dominates fisheries management practice and the escapement-based
-approach that became the focus of theory will result in different
-behaviors under uncertainty. Intuitively, any uncertainty, either in the
-population growth model (stochasticity), or measurement error, should
-seem to justify harvesting fewer fish, as is built into the TAC limits
-discussed above. Yet formal treatments of these issues have so far
-required approximations, and these approximations have driven
-paradoxical conclusions which we briefly summarize here.
+see Clark (1990)). This strategy is known as \emph{constant escapement}
+(CE), since a constant sock size \(B_{MSY}\) escapes harvest each year.
+Because CE and MSY converge to the \emph{same long-term biomass and same
+long-term average yield}, CE can appear to be merely a more formal
+justification for MSY. However, in practice the two approaches are very
+different: because natural populations fluctuate year-to-year, under CE,
+a different harvest quota must be set each year to achieve the constant
+escapement. Because CE is derived as the economic optimum (assuming
+perfect measurements), it is sometimes referred to as Maximum Economic
+Yield, (MEY; Burgess et al. 2018), or as Rights Based Fisheries
+Management (RBFM, Costello et al. 2016).
 
+In the face of a naturally fluctuating population, previous arguments
+made by Gordon and Press (1954); Schaefer (1954) or Clark (1973) no
+longer hold. The optimal harvest of a population under a model such as
+the stochastic Gordon Schaefer, Eq \eqref{Gordon-Schaefer}, is an
+example of a Markov Decision Problem (MDP). This is not to be confused
+with the the problem of \emph{estimating} parameters or posteriors of a
+Markov process model, e.g.~through typical Bayesian analysis -- recall
+this is a decision problem, in which the model has already been
+estimated and now we are tasked with choosing a sequence of future
+harvests based on that model. Such MDP problems are commonly referred to
+in ecological literature by its solution method, Stochastic Dynamic
+Programming (SDP) (Marescot et al. 2013), widely used in both ecological
+management and animal behavior (Mangel 1985; Mangel and Clark 1988).
+However, thanks to a mathematical proof provided by Reed (1979),
+fisheries managers have largely been able to bi-pass the need for SDP.
+But this convenient result also opened the door to paradox of
+uncertainty that would persist for the next four decades.
+
+\hypertarget{reeds-paradox-s-d}{%
 \subsection{\texorpdfstring{Reed's Paradox:
-\(S = D\)}{Reed's Paradox: S = D}}\label{reeds-paradox-s-d}
+\(S = D\)}{Reed's Paradox: S = D}}\label{reeds-paradox-s-d}}
 
-The first of these we shall refer to as Reed's Paradox for stochastic
-growth, owing to the mathematical proof provided in Reed (1979) which
-demonstrates that, under sufficiently general assumptions, the optimal
-escapement \(S\) for a population under stochastic growth, is identical
-to the optimal escapement \(D\) of a deterministic population,
-\(S = D = B_{MSY}\). This surprising result suggests that in going from
-a world where a manager has perfect knowledge of absolutely everything
-into a scenario where the manager faces considerable uncertainty about
-the future state of the world, no additional precaution is needed. This
-also provides the manager with a remarkably convenient mechanism for
-determining the optimal harvest policy: rather than rely on
-computationally intensive Stochastic Dynamic Programming to determine
-the optimal policy, a simple derivative will suffice, which is all that
-is needed to solve the maximum of the deterministic problem.
+Reed (1979) proved that, under sufficiently general assumptions, the
+optimal escapement \(S\) for a population under stochastic growth, is
+identical to Clark (1973)'s optimal escapement \(D\) for a deterministic
+population, \(S = D = B_{MSY}\). This surprising result suggests that in
+going from a world where a manager has perfect knowledge of absolutely
+everything into a scenario where the manager faces considerable
+uncertainty about the future state of the world, no additional
+precaution is needed.
 
-\subsection{Clark's Paradox}\label{clarks-paradox}
+\hypertarget{clarks-paradox}{%
+\subsection{Clark's Paradox}\label{clarks-paradox}}
 
 Clark and Kirkwood (1986) was among the first attempts to resolve Reed's
 Paradox. Clark and Kirkwood (1986) (quite correctly, as we will see),
@@ -374,9 +418,8 @@ resources, the stock level X is almost never known very accurately,
 owing to the difficulty of observing fish in their natural environment.
 \end{quote}
 
-Unfortunately, Clark and Kirkwood (1986) was unable to solve the
-resulting problem exactly, but had to adopt an almost equally
-troublesome assumption:
+Clark and Kirkwood (1986) were unable to solve the resulting problem
+exactly, but had to adopt an almost equally troublesome assumption:
 
 \begin{quote}
 For reasons of tractability, we shall adopt the simplifying assumption
@@ -385,10 +428,10 @@ that the escapement level S, is known exactly at the end of that period.
 assumption is relaxed.)
 \end{quote}
 
-Unfortunately for Clark and Kirkwood (1986), this ``simplifying
-assumption'' serves to squash most of the measurement error, and their
-results instead only deepened the paradox, finding policies that become
-even \emph{less} cautious as uncertainty increases:
+Unfortunately, this ``simplifying assumption'' serves to squash most of
+the measurement error, and their results instead only deepened the
+paradox, finding policies that become even \emph{less} cautious as
+uncertainty increases:
 
 \begin{quote}
 {[}Our{]} results appear to contradict the conventional wisdom of
@@ -407,34 +450,98 @@ expected escapements below the deterministic fishery closure threshold.
 
 Despite these notes of caution, both Clark and Kirkwood (1986) and Sethi
 et al. (2005) ultimately attempt to rationalize this counter-intuitive
-conclusion rather than reject it. Others have also attempted to
-introduce measurement error, but always relying on various
-approximations that similarly alter the problem. The most common such
-assumption is to assume from the outset that the solution must be of
-`constant-escapement' type (Ludwig and Walters 1981; Roughgarden and
-Smith 1996; Engen et al. 1997; Moxnes 2003). Here we will illustrate the
-use of powerful modern algorithms that will permit a more direct
-solution to the case of measurement uncertainty. In addition to
-resolving this paradox, we will demonstrate this direct solution also
-out-performs current more heuristic rules of thumb such as those
-currently used in fisheries management to account for uncertainty.
+conclusion rather than reject it. Intuitively, uncertainty in the
+population growth model (stochasticity) or measurement error, would seem
+to justify harvesting fewer fish. Instead, existing optimal control
+theory has presented only the paradoxical results that uncertainty
+either should not matter at all, or that we should increase rather than
+decrease harvests in response to increased uncertainty. Numerous other
+attempts have been made to resolve this paradox through alternative
+assumptions, the most common being to assume from the outset to look
+only for `constant-escapement' type policies (Ludwig and Walters 1981;
+Roughgarden and Smith 1996; Engen et al. 1997; Moxnes 2003). Owing to
+the ``mathematical difficulty'' Clark first observed, none have
+attempted a direct solution which we will present here.
 
+In practice, TAC-managed fisheries are more common that CE-managed
+fisheries, at least in the United States. CE-based regulation is limited
+primarily to salmon, species for which population estimates may be more
+precise and thus closer to Reed's assumption. We are not aware of any
+fishery that has put Clark's Paradox into practice, harvesting more in
+response to increased uncertainty. As we shall illustrate, this is
+particularly fortunate; though approaches that properly account for both
+forms of uncertainty can perform even better.
+
+\hypertarget{pomdps-an-optimal-treatment-of-measurement-uncertainty}{%
 \subsection{POMDPs: An optimal treatment of measurement
-uncertainty}\label{pomdps-an-optimal-treatment-of-measurement-uncertainty}
+uncertainty}\label{pomdps-an-optimal-treatment-of-measurement-uncertainty}}
 
-As discussed above, absent the short-cut provided by Reed's theorems --
-solving for the optimal management policy in a stochastically
-fluctuating population -- involves a Markov Decision Process (MDP),
-commonly referred to in ecological literature by its solution method,
-Stochastic Dynamic Programming (SDP). The constant escapement (CE)
-strategy considered here is the result of such an MDP or SDP analysis.
-Once measurement uncertainty is introduced, the problem becomes a
-Partially Observed Markov Decision Process (POMDP, not be confused with
-a partially observed or hidden Markov model, HMM, in which no decision
-process is involved). The POMDP problem is posed identically to that of
-the MDP problem, with the addition of an observation process, but cannot
-be solved using SDP directly. The POMDP problem for fisheries question
-considered here can be summarized as follows:
+Why does the introduction of measurement uncertainty make the decision
+problem so much harder? Consider the thought experiment of managing a
+fish stock where in each of the previous four years stock assessments
+have put the population size at, say, 51, 54, 49, 51, (say, measured in
+percent of carrying capacity, \(K\)). Under a constant escapement target
+of 50, the harvest quota would be 1, 4, 0, 1, respectively. Note that
+this control rule depends only on the measurement for the year in
+question, which is assumed to be measured without error. If we then
+measure a stock size of 75, an assumption that this measurement is made
+without error would justify the sudden increase to a quota of 25. Yet if
+we admit the possibility of measurement error, this sudden bump starts
+to look very suspicious in light of all the previous observations.
+Perfect measurements let us exploit the Markov property of the model --
+the most recent measurement tells us all we need to know. In contrast,
+the introduction of measurement uncertainty breaks this Markovian
+assumption: a rational decision maker would suspect this 75 to be an
+over-estimate based on prior observations. Under imperfect observations,
+we no longer have a Markov Decision Process (MDP) over the observed
+state space. Rather, we have a Partially Observed Markov Decision
+Process (POMDP). A POMDP policy cannot be expressed as a policy function
+at all (much less as policy function with a single constant-escapement
+target, as much previous work has assumed). Instead, a POMDP policy can
+be thought of as depending not only on the most recent observation, but
+the recent observation combined with a \emph{prior belief} about what
+state the system is in, which itself is determined by all past
+observations. In this manner, the POMDP can consider how much weight to
+give the most recent observation based on how it compares to prior
+beliefs.
+
+Algorithmic innovations from the robotics community have now made it
+possible to numerically solve non-trivial POMDP problems. The need to
+consider all past observations becomes particularly demanding given the
+forward-looking nature of a decision problem. Not only must we consider
+all possible sequences of future actions over all possible sequences of
+future states, but we must add to that all possible sequences of future
+measurements. The computational complexity involved has historically
+limited POMDP applications to contexts with only a handful of possible
+states and actions (e.g. Chadès et al. 2008, 2011; Fackler and Haight
+2014; Fackler and Pacifici 2014), insufficient to capture fisheries
+models appropriately. Meanwhile, methods to solve decision problems with
+imperfect information have advanced steadily in the field of robotics
+and artificial intelligence. Almost contemporaneous with Reed's work,
+papers by Smallwood and Sondik (1973) and Sondik (1978) laid
+mathematical foundations for algorithms that could efficiently solve
+POMDP problems (e.g. Kaelbling et al. 1998; Pineau et al. 2003). More
+recently, driven by demands in areas such as autonomous vehicle decision
+making, newer point-based approximation algorithms such as SARSOP
+(Kurniawati et al. 2008) have made it possible to solve POMDPs with 100s
+of states and actions. We have adapt this algorithm for application to
+the fisheries context, and provide an efficient implementation as a
+preliminary R package (Boettiger et al. 2018) which can be used to
+replicate and further explore results presented here. Details of the
+analysis presented here including annotated code to reproduce and
+further explore all of the following results is provided in the
+supplementary material.
+
+Precise definitions of both the (fully observed) MDPs and POMDPs (not to
+be confused with Markov Process Models and Hidden Markov Process Models
+-- methods for which estimate the model but do not involve the feedback
+of any decision process) in an ecological context can be found in
+Williams (2011), or in classic work from the engineering and robotics
+community (e.g. Smallwood and Sondik 1973, and @Sondik1978). For
+convenience, we summarize the POMDP definition and common notation here.
+The POMDP problem is posed identically to that of the MDP problem, with
+the addition of an observation process The POMDP problem for fisheries
+question considered here can be summarized as follows:
 
 \begin{itemize}
 \item
@@ -445,7 +552,12 @@ considered here can be summarized as follows:
   Gordon-Schaefer stock recruitment function \(f\) with normally
   distributed growth uncertainty
   \(x_{t+1} \sim \mathcal{N}(f(x_t,a_t), \sigma_g)\), truncated at zero
-  to exclude negative population sizes.
+  to exclude negative population sizes. The action \(a_t\) represents
+  the harvest quota set for the fishery. Attempting to implement a quota
+  the exceeds the true population size results in collapse of the
+  fishery. As Clark and Kirkwood (1986) eloquently argues, assuming that
+  extinction is impossible regardless of fishing intensity would
+  unreasonably bias the decision problem.
 \item
   Observation function: \(O(x_t,y_t,a_{t-1})\) the probability of
   observing state \(y_t\) given a system in state \(x_t\). In principle,
@@ -475,33 +587,10 @@ discounted by a factor \(\gamma\), so that a value \(V\) in \(t\) year
 is valued at \(\gamma^t V\) today. Numerically, each of these functions
 are defined over a discrete set of possible states, observations, and
 actions, and can thus be represented as a collection of matrices or
-tensors. While the solution method for MDP problems, stochastic dynamic
-programming (SDP) is well known and readily implemented in ecological
-problems (e.g Mangel and Clark 1988; Marescot et al. 2013), the POMDP
-problem cannot be efficiently solved using SDP. While not unknown to the
-conservation literature (Williams 2011), algorithms for POMDP have
-historically scaled quite poorly, and their application has been
-restricted to contexts with only a handful of possible states and
-actions (e.g. Chadès et al. 2008, 2011; Fackler and Haight 2014; Fackler
-and Pacifici 2014). POMDP algorithms have a substantial literature
-starting almost contemporaneously to the work of Reed (1979) (see
-foundational papers by Smallwood and Sondik (1973) and Sondik (1978))
-and remain an active area in artificial intelligence (e.g. Kaelbling et
-al. 1998; Pineau et al. 2003). By adapting recent algorithmic
-developments (Kurniawati et al. 2008) from that field we are able to
-find solutions for the considerably more complex problems such as the
-case of fisheries management, which requires on the order of 100 states
-and actions to provide sufficient numerical resolution. As the details
-for solving such problems numerically are already well documented we
-will not rehash them here, but instead provide a preliminary R package
-(Boettiger et al. 2018) which provides an implementation of the SARSOP
-algorithm and the fisheries POMDP problem, which can be used to
-replicate any of the results presented here and explore other
-variations. Details of the analysis presented here including annotated
-code to reproduce and further explore all of the following results is
-provided in the supplementary material.
+tensors.
 
-\section{Results}\label{results}
+\hypertarget{results}{%
+\section{Results}\label{results}}
 
 \begin{figure}
 \centering
@@ -511,75 +600,67 @@ under increasing levels of measurement uncertainty. Each plot the mean
 stock size over time across 100 replicate simulations under each policy:
 constant escapement (CE), Total allowable catch (TAC = 80\% MSY), and
 the proposed partially observed Markov decision process (POMDP) method.
-Measurement error increases as a normal distribution with standard
-deviation 0, 0.1, or 0.15, as indicated at the top of the panel.
-Environmental stochasticity is fixed a standard deviation of 0.15 in
-each panel. Carrying capacity K normalized to 1, r = 0.75. Additional
-environmental noise levels and comparison to MSY rather than TAC can be
-found in the supplementary material. \label{sims}}
+Standard deviation from the mean across replicate simulations is shown
+as faint colored bands, indicating significant variation due to
+stochasticity between individual replicates. Measurement error increases
+as a normal distribution with standard deviation 0, 0.1, or 0.15, as
+indicated at the top of the panel. Environmental stochasticity is fixed
+a standard deviation of 0.15 in each panel. Carrying capacity K
+normalized to 1, r = 0.75. Additional environmental noise levels and
+comparison to MSY rather than TAC can be found in the supplementary
+material. \label{sims}}
 \end{figure}
 
-Figure \ref{sims} shows average fish biomass across 100 replicate
-simulations under three different management strategies: constant
-escapement (CE), total allowable catch (TAC; equal to 80\% MSY), and
-partially observed Markov decision process (POMDP) management. Each
-successive panel shows a subsequently higher level of measurement error,
+We consider the average fish biomass across 100 replicate simulations
+under three different management strategies: constant escapement (CE),
+total allowable catch (TAC; equal to 80\% MSY), and partially observed
+Markov decision process (POMDP) management. Each suite of simulations is
+considered under three sequentially higher measurement error regimes,
 from \(\sigma_m = 0\), \(\sigma_m = 0.1\), and \(\sigma_m = 0.15\), as
-indicated. Standard deviation from the mean across replicate simulations
-is shown as faint colored bands, indicating significant variation due to
-stochasticity between individual replicates. In each panel shown in
-Figure \ref{sims} stochastic recruitment (environmental noise) is set to
+indicated, while stochastic recruitment (environmental noise) is set to
 a moderate \(\sigma_g = 0.15\). In the absence of either environmental
-noise or measurement error (Supplemental material, Figure S1) POMDP, CE,
-and MSY would converge to stock at the \(B_{MSY}\), while TAC would
-maintain the stock at a slightly higher level. The first panel of Figure
-\ref{sims} shows that the the introduction of stochastic growth has a
-significant negative impact on the TAC strategy (This impact is even
-more severe for MSY, which always harvests strictly more than TAC by
-definition, as, shown in Supplemental material Figure S2), which results
-in an average biomass significantly lower than \(B_{MSY}\). Without
-measurement error, the CE and POMDP strategies are nearly identical with
-both approximately maintaining the stock at \(B_{MSY}\) despite the
-significant environmental stochasticity. As measurement error increases
-in the subsequent panels, CE and TAC strategies perform increasingly
-poorly, while the POMDP continues to maintain the average stock close to
-\(B_{MSY}\). Notably, CE is significantly more impacted by measurement
-uncertainty than TAC, with CE averaging even lower biomass than TAC
-under moderate measurement uncertainty.
-
-Figure \ref{sims} confirms that the precautionary approach represented
-by the TAC does indeed prove more robust to the problem of measurement
-error than the optimization solution represented by CE. In general, we
-expect that the rigid assumptions required of optimization will lead to
-worse outcomes when those assumptions are not met than we see under the
-corresponding heuristic approach. Yet it is important to bear in mind
-that the opposite pattern was observed in the case of environmental
-stochasticity, in which it was the heuristic TAC strategy rather than
-the CE strategy that lead to the highest over-fishing rate. In contrast,
-the POMDP approach successfully handles both stochasticity and
-observation error, maintaining the stock near \(B_{MSY}\) levels that
-produce the highest yield.
+noise or measurement error POMDP, CE, and MSY would converge to stock at
+the \(B_{MSY}\), while TAC would maintain the stock at a slightly higher
+level (see Supplemental material, Figure S1). The introduction of
+stochastic growth has a significant negative impact on the TAC strategy,
+with a mean biomass significantly lower than \(B_{MSY}\) (first panel,
+Figure \ref{sims}; this impact is even more severe for MSY, see Figure
+S2). Without measurement error, the CE and POMDP strategies are nearly
+identical with both approximately maintaining the stock at \(B_{MSY}\)
+despite the significant environmental stochasticity. As measurement
+error increases in the subsequent panels, CE and TAC strategies perform
+increasingly poorly, while the POMDP continues to maintain the average
+stock close to \(B_{MSY}\). Notably, CE is significantly more impacted
+by measurement uncertainty than TAC, with CE averaging even lower
+biomass than TAC under moderate measurement uncertainty. These results
+confirm that the precautionary approach represented by the TAC does
+indeed prove more robust to the problem of measurement error than the
+optimization solution represented by CE, but is less robust to
+environmental error. In contrast, the POMDP approach successfully
+handles both sources of uncertainty, maintaining higher stocks, near
+\(B_{MSY}\) level, and producing the highest yield.
 
 \begin{figure}
 \centering
 \includegraphics{manuscript_files/figure-latex/econ-1.pdf}
 \caption{Expected net present value of the fishery across strategies
 under increasing levels of measurement error \(\sigma_m\). Net present
-value is th sum of all future harvests discounted over time and averaged
-across 100 replicates simulations under each strategy, as shown in
-Figure \ref{sims}. The value under constant escapement (CE) is optimal
-when measurements are perfect but decreases rapidly with increasing
-measurement error. The more cautious TAC is not economically optimal but
-largely unimpacted by increasing error, while POMDP attains consistently
-high economic yield despite the increasing uncertainty. \label{econ}}
+value is the sum of all future harvests discounted over time and
+averaged across 100 replicates simulations under each strategy, as shown
+in Figure \ref{sims}. The value under constant escapement (CE) is
+optimal when measurements are perfect but decreases rapidly with
+increasing measurement error. The more cautious TAC is not economically
+optimal but largely unimpacted by increasing error, while POMDP attains
+consistently high economic yield despite the increasing uncertainty.
+\label{econ}}
 \end{figure}
 
 This pattern in management success in ecological terms (the relatively
 recovery and maintenance of fish biomass) is also borne out in terms of
-economic performance. Figure \ref{econ} shows the mean net present value
-(averaging across replicates and discounting future profits by the
-discount factor \(\gamma\)) for these same simulations at increasing
-levels of measurement uncertainty. As before, environmental
+economic performance. We find the mean net present value (averaging
+across replicates and discounting future profits by the discount factor
+\(\gamma\)) for these same simulations at increasing levels of
+measurement uncertainty (Figure \ref{econ} ). As before, environmental
 stochasticity is set at \(\sigma_g = 0.15\). In the absence of
 measurement uncertainty, constant escapement (CE) is optimal (as per
 Reed (1979)), while the heuristic caution built into the total allowable
@@ -697,7 +778,7 @@ do not change the general pattern. In addition to an explicit dependence
 on the measurement error, our POMDP solutions depend on another piece of
 information: any prior observations of the stock size.
 
-Differences in attention to prior beliefs,determined by prior
+Differences in attention to prior beliefs, determined by prior
 observations, drive the differences between the POMDP strategy and the
 other strategies and can resolve the uncertainty paradox. While the
 catch quota under both TAC and CE strategies can be completely
@@ -852,79 +933,121 @@ POMDP solution need not always be more conservative (lower harvest) than
 these strategies, it makes use of the all prior observations to tune the
 level of caution appropriately.
 
-\section{Discussion}\label{discussion}
+\hypertarget{discussion}{%
+\section{Discussion}\label{discussion}}
 
-Using modern algorithms we have been able to crack the nut of
-measurement uncertainty in the optimal management of marine fisheries
-and debunk long-standing paradoxes that increased measurement
-uncertainty should be met with larger harvests. We have demonstrated
-that both existing optimal control approaches and existing precautionary
-approaches result in over-exploitation and long term declines of fish
-stocks, as well as reduced economic value, while in contrast, the POMDP
-approach is able to deliver both ecological and economic recovery
-despite uncertainty in measurements. These results have important
-implications for both global fisheries and ecological management more
-generally. In marine fisheries, evidence of such over-exploitation has
-already been well documented (Worm et al. 2006, 2009; Costello et al.
-2016). Our results suggest that measurement uncertainty may contribute
-to this pattern, as such errors lead to over-exploitation under current
-best practices such as MSY, TAC or CE, which have previously been
-thought to be sufficient to ensure the recovery of stocks world-wide
-(Costello et al. 2016).
+Using modern algorithms we have been able to both crack the nut of
+measurement uncertainty in the optimal management of ecological
+populations such as marine fisheries, debunking a long-standing paradox
+created by previous literature which has argued that increased
+measurement uncertainty should be met with equal or larger harvests
+(e.g. Reed 1979; Clark and Kirkwood 1986; Sethi et al. 2005). By using
+powerful algorithms developed first the robotics literature to solve
+POMDPs (Kurniawati et al. 2008), we have been able to tackle this
+optimal control problem directly rather than resorting to the
+simplifying assumptions used in previous work. Our solution confirms the
+initution of the precautionary principle in a quantitatively precise
+form: under most (but not all) conditions, \emph{greater uncertainty
+results in smaller optimal harvests}. Despite frequently proposing
+smaller harvests than existing approaches, the POMDP solution achieves
+higher long-term economic value as well as higher average stock sizes
+over the long term.
 
-Our results also have important consequences for ecological management
-more generally. The study and application of management strategies such
-as MSY and CE underpin much of conservation and natural resource
-management in forest management and many other terrestrial ecosystems
-(e.g. Clark and Mangel 2000). Descision making under uncertainty is a
-central challenge for ecology and conservation biology (Polasky et al.
-2011), which we have long attempted to address through either simplified
-optimal control models or more heuristic approaches such as the
-precautionary principle and resilience thinking (Fischer et al. 2009).
-We have illustrated how both of these approaches can fail to provide an
-adequate strategy when faced with measurement uncertainty. To avoid this
-pitfall, a strategy must be dynamic to make best use of the available
-information without assuming that information is perfect. The
-simplisitic optimal control approach of CE fails by placing too much
-confidence in measurements even when they are significantly at odds with
-prior expectations. Similarly, the TAC approach also fails due to it's
-reliance on a simple one-size-fits-all strategy, not reducing catch
-quotas sufficiently when stocks are too low but also failing to increase
-them when stocks are higher. It is precisely this ability to adapt the
-policy in response to available information, as illustrated in Figure
-\ref{policy}, that makes the POMDP approach successful. Nevertheless, it
-may be tempting to see these results as either trivial or impractical,
-but a closer inspection reveals they are neither.
+This lesson has clear relevance in the context of fisheries management.
+Here, practice is already wiser than theory, where the optimal control
+based on the CE results of Clark (1973) and Reed (1979) is limited to
+fisheries such as salmon where estimates in stock size may be less
+significant than in purely marine species. To our knowledge, no fishery
+has intentionally put the more aggressive harvest solutions of Clark and
+Kirkwood (1986) and Sethi et al. (2005) into practice. Yet this does not
+lift the spectre of these methods, where CE-based predictions feature
+prominently in global fisheries analyses as the economically optimal
+strategy and the fastest route to recovery (Costello et al. 2016;
+Burgess et al. 2018). Our results raise serious questions about the
+optimistic forecasts predicted under these CE-based policies. Meanwhile,
+MSY remains the dominate standard international law (Mace 2001), and
+many well-managed US fisheries rely on a version of the TAC based
+precautionary adjustment to MSY to comply with catch limits under
+Magnuson-Stevens Act. Our results show that these strategies are less
+sensitive to measurement error, but not immune. Comparisons against more
+heuristic decision methods are more difficult: management strategy
+evaluation (MSE; Smith 1994; Punt et al. 2016) will depend on precisely
+what management scenarios are considered. Under sufficient uncertainty,
+both the existing optimal and precautionary approaches can lead to
+declines in biomass and economic returns which could be avoided by
+POMDP-based management.
 
-First, it may seem obvious that POMDP would out-preform more primitive
-optimal control solutions such as CE, but this was hardly a forgone
-conclusion. Indeed, the previous example of Reed (1979) had proven that
-the complex stochastic dynamic programming solutions required to
-accommodate stochastic dynamics would perform no better than the simple
-maximization based purely on the deterministic model. If stochasticity
-doesn't matter, it is easy to believe that measurement error would be
-minor at best. In fact, we find that once we account for measurement
-error, the effects of both stochasticity and measurement have a
-significant influence over the optimal policy. It is similarly tempting
-to dismiss the better performance of POMDP against a more
-rule-of-thumb{[}\^{}1{]} based strategy like the TAC scenario considered
-here (fishing at 80\% MSY), but once again this was not a forgone
-conclusion. While a better economic return might reasonably be expected
-of the optimization approach, it was not obvious that POMDP would also
-be at times more cautious than the rule of thumb, able to deliver both
-higher economic returns by harvesting more when it was safe to do so,
-and higher ecological recovery by harvesting even less than TAC when
-necessary. These results highlight the difficulty of finding effective
-heuristic rules and underscore the power and utility of more
-sophisticated strategies such as POMDP which can make the best use of
-all available information.
+This conclusion has important broader implications for ecological
+management more generally. Decision making under uncertainty is a
+central challenge for ecology and conservation biology, which frequently
+pits optimal control based approaches against more heuristic approaches
+such as resilience thinking, scenario planning, and the precautionary
+principle (Polasky et al. 2011). With economists frequently favoring the
+precise, stylized approach of optimal control and ecologists embracing
+the realities of greater complexity and uncertainty echoed in more
+heursitic approaches, this division can sometimes appear to pit economic
+outcomes against ecological objectives. That perspective is echoed in
+the paradox discussed here, in which economic optimization ignoring
+uncertainty has argued in cold mathematical logic for a rejection of the
+precationary principle. Our results demonstrate that this divide is
+artificial. With sufficiently powerful algorithms we can go some ways to
+realizing the call of Fischer et al. (2009) to combine more ecologically
+realistic assumptions such as measurement error with optimal control
+approaches in ecological management. Both sides are vindicated in our
+solution: economic optimization under POMDP does not controdict the
+precautionary principle, while under POMDP, optimal control can also
+achieve better ecological outcomes than blunt precautionary rule
+(i.e.~TAC, which reduced all harvests by 20\% below MSY target). As
+Fischer et al. (2009) predicted, unifying optimal control with more
+resilience-inspired approaches is win-win.
 
-\^{}1: Given the sophisticated policies often in place to determine
-actual TAC levels, one might object to our characterization of this as
-merely a rule-of-thumb. We use this term merely to distinguish it from
-the optimal control approach -- that despite technical precision, TAC
-adjustments are set by a heuristic instead of the result of some dynamic
-optimization algorithm as in CE and POMDP.
+If accounting for measurement uncertainty can resolve previous paradoxes
+and divides, it also raises additional challenges. The approach
+discussed here is vulnerable both to the charge of being too simple to
+be realistic while also being too complicated to be feasible. These
+issues are as easily recognized in other ecological management contexts,
+from harvests of wild game or forestry to pest outbreaks, (e.g. Richards
+et al. 1999; {\textbf{???}}; Blackwood et al. 2010; Shea et al. 2014;
+Dee et al. 2017; Iacona et al. 2017; Li et al. 2017) as in fisheries,
+where ecological complexity is invariably high and management capacity
+invariably limited. We address each of these in turn.
+
+Are the dynamics considered here too simple? Our underlying model is
+undoubtably much simpler than many of the age or stage structured models
+used in modern fisheries management -- aspects whose importance to
+ecological dynamics have been established well beyond fisheries as well.
+Yet it is critical to bear in mind that this stylized one-dimensional
+model is used only to compare the relative performance of the different
+decision strategies considered here (TAC, CE, and POMDP) in order to
+illustrate the potential importance of uncertainty in measurement. There
+is little reason to believe CE or TAC would perform better under more
+complex cases such as age-structured models that only further deviate
+from the assumptions under which they were derived (e.g. Holden and
+Conrad 2015). POMDP approaches are in no way incompatible with more
+complex models, whether that be age structure or even more ambitious
+non-parametric representations defined directly from data using Guassian
+Processes or other machine learning techniques (e.g. Boettiger et al.
+2015). Simple models have always served as tools for comparison and
+intuition, and serve the same illustrative role here.
+
+Is this approach too complex to be feasible? The importance of simple
+and effective rules of thumb in conservation management has been well
+documented (e.g. Chadès et al. 2011). Sophisticated and computationally
+intensive approaches such as POMDP may seem improbable at a time when
+many areas of natural resource management, even simple, rule-of-thumb
+based methods struggle to take root. There is no doubt that the solution
+method needed here is computationally intensive even for the simple
+model considered here, and will only become more so under greater
+ecological complexity. Indeed, it was precisely such computational
+limitations that led to the shortcuts in work such as Clark and Kirkwood
+(1986), with the ensuing potentially misleading conclusions. While in
+the following decades ecologists largely turned away from
+computationally intensive optimizations required for even simple models
+with stochastic dynamic programming, (while continuing to construct ever
+more complicated hierarchical models), engineers have chipped away at
+the decision problem to reveal algorithms such as SARSOP that make much
+larger dynamic programming problems tractable. Yes, even more
+sophisticated algorithms will be needed to address the limitations
 
 Second, we must ask if the policies derived from POMDP are practical. As
 with constant escapement, the POMDP solutions we considered here result
@@ -949,36 +1072,8 @@ ecological health suffer under TAC/MSY and CE based management. Arnason
 approach to fisheries management (RBFM) would lead to self adoption of
 precisely such optimal policies.
 
-Third: are the examples considered here too simple? The strategies we
-have compared against underpin both current practice and management
-aspirations. Together, MSY and TAC-based management reflects much of
-modern best practice as it is understood in fisheries management and
-elsewhere. While real-world application of these approaches frequently
-involves more complex models, the models we have considered here are the
-very ones under which these strategies were designed and tested, and
-there is little reason to believe they would perform better under more
-complex cases such as age-structured models that do not always meet
-those assumptions (e.g. Holden and Conrad 2015). The relatively poor
-ecological and economic performance of these common best-practices
-relative to the alternative approach of POMDP is thus reason enough for
-concern. This issue is further underscored by the reality of both
-long-running ecological deterioration (Worm et al. 2006, 2009) and
-economic costs of global fisheries.
-
-Fourth: is the approach taken here too complex to be feasible? The
-importance of simple and effective rules of thumb in conservation
-management has been well documented (e.g. Chadès et al. 2011).
-Sophisticated and computationally intensive approaches such as POMDP may
-seem improbable at a time when many areas of natural resource
-management, even simple, rule-of-thumb based methods struggle to take
-root. And yet, in this same age we rely on far more complex and
-computationally intensive algorithms to perform far more trivial tasks
-such as determining what advertisements we see. Surely a planet that can
-afford such complex optimization for how advertising space is allocated
-on a small screen can one day manage it's natural resources and
-conservation efforts with such tools?
-
-\subsection{Future directions}\label{future-directions}
+\hypertarget{future-directions}{%
+\subsection{Future directions}\label{future-directions}}
 
 Several limitations that have been studied in fully observed (MDP)
 optimal decision problems, such as parameter uncertainty (e.g. Ludwig
@@ -998,270 +1093,318 @@ the number of states and actions considered here. A value of information
 Pozzi 2016), could identify when it is worthwhile to actively reduce
 measurement error.
 
-\section*{References}\label{references}
+\hypertarget{references}{%
+\section*{References}\label{references}}
 \addcontentsline{toc}{section}{References}
 
 \hypertarget{refs}{}
-\hypertarget{ref-Arnason2012}{}
+\leavevmode\hypertarget{ref-Arnason2012}{}%
 Arnason, R. 2012. Property rights in fisheries: How much can individual
 transferable quotas accomplish? Review of Environmental Economics and
 Policy 6:217--236.
 
-\hypertarget{ref-Beverton1957}{}
+\leavevmode\hypertarget{ref-Beverton1957}{}%
 Beverton, R., and S. Holt. 1957. On the Dynamics of Exploited Fish
 Populations. Chapman; Hall, London.
 
-\hypertarget{ref-Boettiger2015}{}
+\leavevmode\hypertarget{ref-Blackwood2010}{}%
+Blackwood, J. C., A. Hastings, and C. Costello. 2010. Cost-effective
+management of invasive species using linear-quadratic control.
+Ecological Economics 69:519--527.
+
+\leavevmode\hypertarget{ref-Boettiger2015}{}%
 Boettiger, C., M. Mangel, and S. Munch. 2015. Avoiding tipping points in
 fisheries management through Gaussian process dynamic programming.
 Proceedings of the Royal Society B: Biological Sciences
 282:20141631--20141631.
 
-\hypertarget{ref-sarsop-pkg}{}
+\leavevmode\hypertarget{ref-sarsop-pkg}{}%
 Boettiger, C., J. Ooms, and M. Memarzadeh. 2018. Sarsop: Approximate
 pomdp planning software.
 
-\hypertarget{ref-Botsford1997}{}
+\leavevmode\hypertarget{ref-Botsford1997}{}%
 Botsford, L. W., J. C. Castilla, and C. Peterson. 1997. The management
 of fisheries and marine ecosystems. Science 277:509--515.
 
-\hypertarget{ref-Britten2017}{}
-Britten, G., M. Dowd, L. Kanary, and B. Worm. 2017. Extended fisheries
-recovery timelines in a changing environment. Nature Communications.
+\leavevmode\hypertarget{ref-Britten2017}{}%
+Britten, G. L., M. Dowd, L. Kanary, and B. Worm. 2017. Extended
+fisheries recovery timelines in a changing environment. Nature
+Communications 8:15325.
 
-\hypertarget{ref-Chades2011}{}
+\leavevmode\hypertarget{ref-Bunnefeld2011}{}%
+Bunnefeld, N., E. Hoshino, and E. Milner-Gulland. 2011. Management
+stratefy evaluation: a powerful tool for conservation? Trends in Ecology
+and Evolution 26:441--447.
+
+\leavevmode\hypertarget{ref-Burgess2018}{}%
+Burgess, M., G. McDermott, B. Owashi, L. Peavey Reeves, T. Clavelle, D.
+Ovando, B. Wallace, et al. 2018. Protecting marine mammals, turtles, and
+birds by rebuilding global fisheries. Science 359:1255--1258.
+
+\leavevmode\hypertarget{ref-Chades2011}{}%
 Chadès, I., T. G. Martin, S. Nicol, M. A. Burgman, H. P. Possingham, and
 Y. M. Buckley. 2011. General rules for managing and surveying networks
 of pests, diseases, and endangered species. Proceedings of the National
 Academy of Sciences 108:8323--8.
 
-\hypertarget{ref-Chades2008}{}
+\leavevmode\hypertarget{ref-Chades2008}{}%
 Chadès, I., E. McDonald-Madden, M. a McCarthy, B. Wintle, M. Linkie, and
 H. P. Possingham. 2008. When to stop managing or surveying cryptic
 threatened species. Proceedings of the National Academy of Sciences
 105:13936--40.
 
-\hypertarget{ref-Clark1973}{}
+\leavevmode\hypertarget{ref-Clark1973}{}%
 Clark, C. W. 1973. Profit maximization and the extinction of animal
 species. Journal of Political Economy 81:950--961.
 
-\hypertarget{ref-Clark1990}{}
+\leavevmode\hypertarget{ref-Clark1990}{}%
 Clark, C. W. 1990. Mathematical Bioeconomics: The Optimal Management of
 Renewable Resources, 2nd Edition. Wiley-Interscience.
 
-\hypertarget{ref-Clark1986}{}
+\leavevmode\hypertarget{ref-Clark1986}{}%
 Clark, C. W., and G. P. Kirkwood. 1986. On uncertain renewable resource
 stocks: Optimal harvest policies and the value of stock surveys. Journal
 of Environmental Economics and Management 13:235--244.
 
-\hypertarget{ref-Clark2000}{}
-Clark, C. W., and M. Mangel. 2000. Dynamic state variable models in
-ecology. Oxford University Press, Oxford.
-
-\hypertarget{ref-Costello2016}{}
+\leavevmode\hypertarget{ref-Costello2016}{}%
 Costello, C., D. Ovando, T. Clavelle, C. K. Strauss, R. Hilborn, M. C.
 Melnychuk, T. A. Branch, et al. 2016. Global fishery prospects under
 contrasting management regimes. Proceedings of the National Academy of
 Sciences 113:5125--5129.
 
-\hypertarget{ref-nimble}{}
+\leavevmode\hypertarget{ref-Dee2017}{}%
+Dee, L. E., M. De Lara, C. Costello, and S. D. Gaines. 2017. To what
+extent can ecosystem services motivate protecting biodiversity? Ecology
+Letters 20:935--946.
+
+\leavevmode\hypertarget{ref-nimble}{}%
 de Valpine, P., D. Turek, C. J. Paciorek, C. Anderson-Bergman, T.
 Duncan, and R. Bodik. 2017. Programming With Models: Writing Statistical
 Algorithms for General Model Structures With NIMBLE. Journal of
 Computational and Graphical Statistics 26:403--413.
 
-\hypertarget{ref-Dichmont2016}{}
+\leavevmode\hypertarget{ref-Dichmont2016}{}%
 Dichmont, C. M., R. A. Deng, A. E. Punt, J. Brodziak, Y.-J. Chang, J. M.
 Cope, J. N. Ianelli, et al. 2016. A review of stock assessment packages
 in the united states. Fisheries Research 183:447--460.
 
-\hypertarget{ref-Engen1997}{}
+\leavevmode\hypertarget{ref-Engen1997}{}%
 Engen, S., R. Lande, and B. Sæther. 1997. Harvesting strategies for
 fluctuating populations based on uncertain population estimates. Journal
 of Theoretical Biology 186:201--212.
 
-\hypertarget{ref-Fackler2014b}{}
+\leavevmode\hypertarget{ref-Fackler2014b}{}%
 Fackler, P., and R. Haight. 2014. Monitoring as a partially observable
 decision problem. Resource and Energy Economics 37:226--241.
 
-\hypertarget{ref-Fackler2014}{}
+\leavevmode\hypertarget{ref-Fackler2014}{}%
 Fackler, P., and K. Pacifici. 2014. Addressing structural and
 observational uncertainty in resource management. Environmental
 Management 133:27--36.
 
-\hypertarget{ref-Fischer2009}{}
+\leavevmode\hypertarget{ref-Fischer2009}{}%
 Fischer, J., G. D. Peterson, T. a Gardner, L. J. Gordon, I. Fazey, T.
 Elmqvist, A. Felton, et al. 2009. Integrating resilience thinking and
 optimisation for conservation. Trends in ecology \& evolution
 24:549--54.
 
-\hypertarget{ref-Gordon1954}{}
+\leavevmode\hypertarget{ref-Gordon1954}{}%
 Gordon, H. S., and C. Press. 1954. The Economic Theory of a
 Common-Property Resource: The Fishery. Journal of Political Economy
 62:124--142.
 
-\hypertarget{ref-Hilborn2010}{}
+\leavevmode\hypertarget{ref-Hilborn2010}{}%
 Hilborn, R. 2010. Pretty Good Yield and exploited fishes. Marine Policy
 34:193--196.
 
-\hypertarget{ref-Holden2015}{}
+\leavevmode\hypertarget{ref-Holden2015}{}%
 Holden, M., and J. Conrad. 2015. Optimal escapement in stage-structured
 fisheries with environmental stochasticity. Mathematical biosciences
 269:76--85.
 
-\hypertarget{ref-Holling1973}{}
+\leavevmode\hypertarget{ref-Holling1973}{}%
 Holling, C. S. 1973. Resilience and Stability of Ecological Systems.
 Annual Review of Ecology and Systematics 4:1--23.
 
-\hypertarget{ref-Johnson2015}{}
+\leavevmode\hypertarget{ref-Iacona2017}{}%
+Iacona, G. D., H. P. Possingham, and M. Bode. 2017. Waiting can be an
+optimal conservation strategy, even in a crisis discipline. Proceedings
+of the National Academy of Sciences 201702111.
+
+\leavevmode\hypertarget{ref-Johnson2015}{}%
 Johnson, F. A., and B. K. Williams. 2015. A Decision-Analytic Approach
 to Adaptive Resource Management. Pages 61--84 \emph{in} C. R. Allen and
 A. S. Garmestani, eds. Adaptive management of social-ecological systems.
 Springer Netherlands, Dordrecht.
 
-\hypertarget{ref-Kaelbling1998}{}
+\leavevmode\hypertarget{ref-Kaelbling1998}{}%
 Kaelbling, L. P., M. L. Littman, and A. R. Cassandra. 1998. Planning and
 Acting in Partially Observable Stochastic Domains. Artificial
 Intelligence 101:99--134.
 
-\hypertarget{ref-Kurniawati2008}{}
+\leavevmode\hypertarget{ref-Kurniawati2008}{}%
 Kurniawati, H., D. Hsu, and W. S. Lee. 2008. SARSOP : Efficient
 Point-Based POMDP Planning by Approximating Optimally Reachable Belief
 Spaces. Proceedings of Robotics: Science and Systems IV.
 
-\hypertarget{ref-Larkin1977}{}
+\leavevmode\hypertarget{ref-Larkin1977}{}%
 Larkin, P. a. 1977. An Epitaph for the Concept of Maximum Sustained
 Yield. Transactions of the American Fisheries Society 106:1--11.
 
-\hypertarget{ref-Levin2008}{}
+\leavevmode\hypertarget{ref-Levin2008}{}%
 Levin, S. A., and J. Lubchenco. 2008. Resilience, Robustness, and Marine
 Ecosystem-based Management. BioScience 58:27--32.
 
-\hypertarget{ref-Ludwig1981}{}
+\leavevmode\hypertarget{ref-Li2017}{}%
+Li, S.-L., O. N. Bjørnstad, M. J. Ferrari, R. Mummah, M. C. Runge, C. J.
+Fonnesbeck, M. J. Tildesley, et al. 2017. Essential information:
+Uncertainty and optimal control of Ebola outbreaks. Proceedings of the
+National Academy of Sciences 114:5659--5664.
+
+\leavevmode\hypertarget{ref-Ludwig1981}{}%
 Ludwig, D., and C. Walters. 1981. Measurement errors and uncertainty in
 parameter estimates for stock and recruitment. Journal of Canadian
 Fisheries and Aquatic Sciences 38:711--720.
 
-\hypertarget{ref-Ludwig1982}{}
+\leavevmode\hypertarget{ref-Ludwig1982}{}%
 Ludwig, D., and C. J. Walters. 1982. Optimal harvesting with imprecise
 parameter estimates. Ecological Modelling 14:273--292.
 
-\hypertarget{ref-Mace2001}{}
-Mace, P. M. 2001. A new role for MSY in single-species and
-ecosystem\(\backslash\)rapproaches to fisheries stock assessment and
-management. Fish and Fisheries 2:2--32.
+\leavevmode\hypertarget{ref-Mace2001}{}%
+Mace, P. M. 2001. A new role for MSY in single-species and ecosystem
+approaches to fisheries stock assessment and management. Fish and
+Fisheries 2:2--32.
 
-\hypertarget{ref-Mangel1988}{}
+\leavevmode\hypertarget{ref-Mangel1985}{}%
+Mangel, M. 1985. Decision and control in uncertain resource systems 255.
+
+\leavevmode\hypertarget{ref-Mangel1988}{}%
 Mangel, M., and C. W. Clark. 1988. Dynamic Modeling in Behavioral
 Ecology. (J. Krebs \& T. Clutton-Brock, eds.). Princeton University
 Press, Princeton.
 
-\hypertarget{ref-Marescot2013}{}
+\leavevmode\hypertarget{ref-Marescot2013}{}%
 Marescot, L., G. Chapron, I. Chadès, P. L. Fackler, C. Duchamp, E.
 Marboutin, and O. Gimenez. 2013. Complex decisions made simple: a primer
-on stochastic dynamic programming. Methods in Ecology and Evolution
-n/a--n/a.
+on stochastic dynamic programming. (R. Freckleton, ed.)Methods in
+Ecology and Evolution 4:872--884.
 
-\hypertarget{ref-May1977}{}
+\leavevmode\hypertarget{ref-May1977}{}%
 May, R. M. 1977. Thresholds and breakpoints in ecosystems with a
 multiplicity of stable states. Nature 269:471--477.
 
-\hypertarget{ref-Memarzadeh2016b}{}
+\leavevmode\hypertarget{ref-Memarzadeh2016b}{}%
 Memarzadeh, M., and M. Pozzi. 2016. Value of information in sequential
 decision making: component inspection, permanent monitoring and
 system-level scheduling. Reliability Engineering \& System Safety
 154:137--151.
 
-\hypertarget{ref-Moxnes2003}{}
+\leavevmode\hypertarget{ref-Moxnes2003}{}%
 Moxnes, E. 2003. Uncertain measurements of renewable resources:
 approximations, harvesting policies and value of accuracy. Journal of
 Environmental Economics and Management 45:85--108.
 
-\hypertarget{ref-Ong2010}{}
+\leavevmode\hypertarget{ref-Nicol2011}{}%
+Nicol, S., and I. Chadès. 2011. Beyond stochastic dynamic programming: a
+heuristic sampling method for optimizing conservation decisions in very
+large state spaces. Methods in Ecology and Evolution 2:221--228.
+
+\leavevmode\hypertarget{ref-Ong2010}{}%
 Ong, S., S. Png, D. Hsu, and W. Lee. 2010. Planning under uncertainty
 for robotic tasks with mixed observability. The International Journal of
 Robotics Research 29:1053--1068.
 
-\hypertarget{ref-Petchy2015}{}
+\leavevmode\hypertarget{ref-Petchy2015}{}%
 Petchey, O. L., M. Pontarp, T. M. Massie, S. Kéfi, A. Ozgul, M.
 Weilenmann, G. M. Palamara, et al. 2015. The ecological forecast
 horizon, and examples of its uses and determinants. Ecology Letters
 18:597--611.
 
-\hypertarget{ref-Pineau2003}{}
+\leavevmode\hypertarget{ref-Pineau2003}{}%
 Pineau, J., G. Gordon, and S. Thrun. 2003. Point-based value iteration:
 An anytime algorithm for POMDPs. IJCAI International Joint Conference on
 Artificial Intelligence 1025--1030.
 
-\hypertarget{ref-Polasky2011}{}
+\leavevmode\hypertarget{ref-Polasky2011}{}%
 Polasky, S., S. R. Carpenter, C. Folke, and B. Keeler. 2011.
 Decision-making under great uncertainty: environmental management in an
-era of global change. Trends in ecology \& evolution 1--7.
+era of global change. Trends in Ecology \& Evolution 26:398--404.
 
-\hypertarget{ref-Reed1979}{}
+\leavevmode\hypertarget{ref-Punt2016}{}%
+Punt, A. E., D. S. Butterworth, C. L. de Moor, J. A. A. De Oliveira, and
+M. Haddon. 2016. Management strategy evaluation: best practices. Fish
+and Fisheries 17:303--334.
+
+\leavevmode\hypertarget{ref-Reed1979}{}%
 Reed, W. J. 1979. Optimal escapement levels in stochastic and
 deterministic harvesting models. Journal of Environmental Economics and
 Management 6:350--363.
 
-\hypertarget{ref-RAM}{}
+\leavevmode\hypertarget{ref-RAM}{}%
 Ricard, D., C. Minto, O. Jensen, and J. Baum. 2011. Examining the
 knowledge base and status of commercially exploited marine species with
 the RAM Legacy Stock Assessment Database. Fish and Fisheries
 13:380--398.
 
-\hypertarget{ref-Roughgarden1996}{}
-Roughgarden, J. E., and F. Smith. 1996. Why fisheries collapse and what
-to do about it. Proceedings of the National Academy of Sciences 93:5078.
+\leavevmode\hypertarget{ref-Richards1999}{}%
+Richards, S. A., H. P. Possingham, and J. Tizard. 1999. Optimal Fire
+Management for Maintaining Community Diversity. Ecological Applications
+9:880--892.
 
-\hypertarget{ref-Schaefer1954}{}
+\leavevmode\hypertarget{ref-Roughgarden1996}{}%
+Roughgarden, J. E., and F. Smith. 1996. Why fisheries collapse and what
+to do about it. Proceedings of the National Academy of Sciences
+93:5078--5083.
+
+\leavevmode\hypertarget{ref-Schaefer1954}{}%
 Schaefer, M. B. 1954. Some aspects of the dynamics of populations
 important to the management of the commercial marine fisheries. Bulletin
 of the Inter-American Tropical Tuna Commission 1:27--56.
 
-\hypertarget{ref-Sethi2005}{}
+\leavevmode\hypertarget{ref-Sethi2005}{}%
 Sethi, G., C. Costello, A. Fisher, M. Hanemann, and L. Karp. 2005.
 Fishery management under multiple uncertainty. Journal of Environmental
 Economics and Management 50:300--318.
 
-\hypertarget{ref-Smallwood1973}{}
-Smallwood, R. D., and E. J. Sondik. 1973. The Optimal Control of
-Partially Observable Markov Decision Processes over a Finite Horizon.
+\leavevmode\hypertarget{ref-Shea2014}{}%
+Shea, K., M. J. Tildesley, M. C. Runge, C. J. Fonnesbeck, and M. J.
+Ferrari. 2014. Adaptive Management and the Value of Information:
+Learning Via Intervention in Epidemiology. PLoS Biology 12:9--12.
 
-\hypertarget{ref-Sondik1978}{}
+\leavevmode\hypertarget{ref-Smallwood1973}{}%
+Smallwood, R. D., and E. J. Sondik. 1973. The Optimal Control of
+Partially Observable Markov Processes Over a Finite Horizon. Operations
+Research 21:1071--1088.
+
+\leavevmode\hypertarget{ref-Smith1994}{}%
+Smith, A. 1994. Management strategy evaluation -- the light on the hill.
+Population dynamics for fisheries management 249--253.
+
+\leavevmode\hypertarget{ref-Sondik1978}{}%
 Sondik, E. J. 1978. The Optimal Control of Partially Observable Markov
 Processes Over the Infinite Horizon : Discounted Costs. Operations
 Research 26:282--304.
 
-\hypertarget{ref-Walters1976}{}
+\leavevmode\hypertarget{ref-Walters1976}{}%
 Walters, C. J., and R. Hilborn. 1976. Adaptive Control of Fishing
 Systems. Journal of the Fisheries Research Board of Canada 33:145--159.
 
-\hypertarget{ref-Walters1978}{}
+\leavevmode\hypertarget{ref-Walters1978}{}%
 ---------. 1978. Ecological Optimization and Adaptive Management. Annual
 Review of Ecology and Systematics 9:157--188.
 
-\hypertarget{ref-Williams2001}{}
+\leavevmode\hypertarget{ref-Williams2001}{}%
 Williams, B. K. 2001. Uncertainty , learning , and the optimal
 management of wildlife. Environmental and Ecological Statistics
 8:269--288.
 
-\hypertarget{ref-Williams2011}{}
+\leavevmode\hypertarget{ref-Williams2011}{}%
 ---------. 2011. Resolving structural uncertainty in natural resources
 management using POMDP approaches. Ecological Modelling 222:1092--1102.
 
-\hypertarget{ref-FAO2009}{}
+\leavevmode\hypertarget{ref-FAO2009}{}%
 World Bank and FAO. 2009. The Sunken Billions. The Economic
 Justification for Fisheries Reform.
-
-\hypertarget{ref-Worm2006}{}
-Worm, B., E. B. Barbier, N. Beaumont, J. E. Duffy, C. Folke, B. S.
-Halpern, J. B. C. Jackson, et al. 2006. Impacts of biodiversity loss on
-ocean ecosystem services. Science (New York, N.Y.) 314:787--90.
-
-\hypertarget{ref-Worm2009}{}
-Worm, B., R. Hilborn, J. K. Baum, T. A. Branch, J. S. Collie, C.
-Costello, M. J. Fogarty, et al. 2009. Rebuilding global fisheries.
-Science (New York, N.Y.) 325:578--85.
 
 \end{document}
 
