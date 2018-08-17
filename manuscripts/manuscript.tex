@@ -53,7 +53,7 @@
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={},
-            pdftitle={The importance of measurement uncertainty in ecological management},
+            pdftitle={Resolving a paradox of measurement uncertainty in ecological management},
             colorlinks=true,
             urlcolor=blue,
             linkcolor=magenta,
@@ -76,7 +76,7 @@
 \begin{document}
 \begin{frontmatter}
 
-  \title{The importance of measurement uncertainty in ecological management}
+  \title{Resolving a paradox of measurement uncertainty in ecological management}
     \author[]{Authors removed during peer review}
   
   
@@ -85,14 +85,14 @@
   Ecological management and decision-making typically focus on uncertainty
   about the future, but surprisingly little is known about how to account
   for uncertainty of the present: that is, the realities of having only
-  partial or imperfect measurements. Our two primary paradigms for
-  handling decisions under uncertainty -- the precautionary principle and
-  optimal control -- have so far given entirely contradictory results.
-  This paradox is best illustrated in the example of fisheries management,
-  where many ideas that guide thinking about ecological decision making
-  were first developed. We find that simplistic optimal control approaches
-  have repeatedly concluded that a manager should increase catch quotas
-  when faced with greater uncertainty about the fish biomass. Current best
+  partial or imperfect measurements. Our primary paradigms for handling
+  decisions under uncertainty -- the precautionary principle and optimal
+  control -- have so far given contradictory results. This paradox is best
+  illustrated in the example of fisheries management, where many ideas
+  that guide thinking about ecological decision making were first
+  developed. We find that simplistic optimal control approaches have
+  repeatedly concluded that a manager should increase catch quotas when
+  faced with greater uncertainty about the fish biomass. Current best
   practices take a more precautionary approach, decreasing catch quotas by
   a fixed amount to account for uncertainty. Using comparisons to both
   simulated and historical catch data, we find that neither approach is
@@ -106,7 +106,7 @@
   implications for how we handle uncertainty in both fisheries and
   ecological management more generally.
   \end{abstract}
-   \begin{keyword} Measurement uncertainty POMDP Decision theory Fisheries Conservation\end{keyword}
+   \begin{keyword} POMDP, measurement uncertainty, decision theory, fisheries, conservation\end{keyword}
  \end{frontmatter}
 
 Imperfect information is ubiquitous in ecological management and
@@ -154,12 +154,14 @@ uncertainty and the rigor of optimization to resolve a long-standing
 paradox and suggest a more robust approach to management.
 
 The challenge of making decisions under uncertainty is obviously not
-unique to fisheries, and the existing methods we critique here can be
-found in a wide range of population and ecosystem management challenges,
-including fire ecology (Richards et al. 1999), invasive species (Shea
-1998; Blackwood et al. 2010), disease outbreaks (Shea et al. 2014; Li et
-al. 2017), and protecting biodiversity (Dee et al. 2017; Iacona et al.
-2017). Yet fisheries conservation and management has long been both a
+unique to fisheries. Existing methods we optimal control methods which
+similarly assume perfect measurements can be found in a wide range of
+population and ecosystem management challenges, including fire ecology
+(Richards et al. 1999), invasive species (Shea 1998; Blackwood et al.
+2010), disease outbreaks (Shea et al. 2014; Li et al. 2017), and
+protecting biodiversity (Dee et al. 2017; Iacona et al. 2017), and in
+common textbooks and reviews (Mangel 1985; Clark 1990; Marescot et al.
+2013). Yet fisheries conservation and management has long been both a
 crucible and proving ground for the theory of ecological management more
 generally, including topics such as adaptive management (Walters and
 Hilborn 1978), ecosystem-based management (Levin and Lubchenco 2008) and
@@ -175,7 +177,7 @@ management.
 
 In this paper, we examine three strategies to managing a natural
 population, such as a fishery, under such uncertainty. This problem has
-a long history in both theory and practice, where seemingly innoccous
+a long history in both theory and practice, where seemingly innocuous
 simplifying assumptions have led to a deep paradox in how managers
 should respond to uncertainty. The precautionary principle (Kriebel et
 al. 2001) would seem to suggest that the greater the uncertainty in our
@@ -201,7 +203,7 @@ uncertainty over the long term, but our recently borrowed approach from
 robotics literature can under identical conditions sustain both higher
 biomass and higher economic yields than those approaches. This
 conclusion has important implications not only for fisheries but
-eocsystem more broadly, underscoring the danger of not correctly
+ecosystem more broadly: underscoring the danger of not correctly
 accounting for measurement uncertainty when making decisions, and
 further to the significant opportunity to learn from fields such as
 robotics when faced with complex and uncertain decisions.
@@ -217,15 +219,15 @@ the net present value (discounted sum of all future profits) of the
 fishery. We will denote the discount rate \(\gamma\). For simplicity we
 will once again follow classic theory and assume a fixed price for fish,
 (equivalently, measuring our value in units of discounted fish rather
-than discounted dollars), though again this assumption is easy to relax.
-Each year, the manager also obtains an estimate \(y_t\) of the true
-\(x_t\) stock size subject to some measurement uncertainty \(\xi_t\)
+than discounted dollars). Each year, the manager also obtains an
+estimate \(y_t\) of the true \(x_t\) stock size subject to some
+measurement uncertainty \(\xi_t\)
 
 \begin{equation}
 y_t = \xi_t x_t 
 \end{equation}
 
-For simplicity we will assume measurement uncertainty is normally
+For simplicity, we will assume measurement uncertainty is normally
 distributed with standard deviation \(\sigma_m\),
 \(\xi \sim \mathcal{N}(1, \sigma_m)\). Given an estimated population
 model along with this (uncertain) measurement of the stock size, the
@@ -237,23 +239,24 @@ of the stock:
 \max_{ \lbrace h_t \rbrace } \mathbb{E} \left \{ \sum_{t=0}^{\infty} \gamma^t \cdot U(x_t, h_t) \right \}
 \end{equation}
 
-For convenience of presentation but without loss of generality, we will
-assume this utility is simply equal to the harvest itself; in economic
-terms, a fixed price for fish without cost on effort:
+For convenience of presentation, we will assume this utility is simply
+equal to the harvest itself.
 
 \begin{equation}
  U(x_t, h_t) = \min(h_t, x_t)
 \end{equation}
 
 where the \(\min\) function ensures no additional reward for attempting
-to harvest more than the entire stock. Existing optimal control
-techniques (Reed (1979)) prove these results are not dependent on the
-particular details of this utility. Using this form allows a more direct
-comparison to approaches such as maximum sustainable yield (MSY), that
-do not include an economic model but merely maximize long-term catch. In
-principle, utility could also reflect ecosystem services or other
-intrinsic values for fish left in the sea and not merely the market for
-consumption (Halpern et al. 2013).
+to harvest more than the entire stock. In economic terms, the
+corresponds to a fixed price per fish caught, with no proportional cost
+on effort required to do so, but the results do not depend on this
+assumption, as existing analyses have previously established (Reed
+1979). Using this form allows a more direct comparison to approaches
+such as maximum sustainable yield (MSY) which do not include an economic
+model but merely maximize long-term catch. In principle, utility could
+also reflect ecosystem services or other intrinsic values for fish left
+in the sea and not merely the market for consumption (Halpern et al.
+2013).
 
 The solution to this decision problem is conditional on a population
 model for the underlying ecological process, describing probability the
@@ -399,9 +402,9 @@ Typically, a stock assessment model provides a best estimate of
 the stock Over-Fishing Limit, (OFL). Based on this, a somewhat lower
 level is set as the Allowable Biological Catch (ABC), reflecting
 uncertainty in the stock assessment. To reflect possible uncertainty
-between reported and actual catch, the ABC is reduced somewhat further
-to define the Total Allowable Catch, (TAC), which forms the basic unit
-of management for many such fisheries. To reflect this process, our
+between reported and actual catch, the ABC may be reduced further to
+define the Total Allowable Catch, (TAC), which forms the basic unit of
+management for many such fisheries. To reflect this process, our
 analysis will also consider policies in which the harvest quota is set
 at 80\% of the level expected under the MSY policy:
 \(H_{TAC}(t) = 0.8 \cdot F_{MSY} \cdot B_t\), for a biomass estimated at
@@ -417,23 +420,25 @@ harvest at non-zero rates even if a stock falls below \(B_{MSY}\), while
 the constant escapement policy does not.
 
 It is important to note that actual management strategies are quite
-diverse. Our focus on comparisons TAC, MSY, and Constant Escapement (CE,
-also refereed to as MEY, see below) reflects only the subset of current
-practices. Another increasingly common approach to address uncertainty
-in both process and models is known as Management Strategy Evaluation
-(MSE, Smith 1994; Dorner et al. 2009; Bunnefeld et al. 2011; Punt et al.
-2016). MSE performs forward simulations under a suite of pre-selected
-candidate strategies to determine which strategy achieves the best
-expected outcomes. Crucially, by limiting the analysis to a suite of
-candidate strategies over a finite number of replicate simulations, this
-approach is able to accommodate substantially greater complexity and
-uncertainty than has been possible with more formal optimal control
-approaches we discuss below. Optimal control solutions rely on dynamic
-programming to consider all possible strategies (all possible sequences
-of harvest under all possible realizations of stock dynamics). As such,
-MSE can be viewed as an approximation to the optimal control solutions
-considered below, a notion that has been formalized in the literature on
-approximate dynamic programming (Nicol and Chadès 2011).
+diverse. Our focus on comparisons TAC, MSY, and Constant Escapement (CE)
+reflects only the subset of current practices. Another increasingly
+common approach to address uncertainty in both process and models is
+known as Management Strategy Evaluation (MSE, Smith 1994; Dorner et al.
+2009; Bunnefeld et al. 2011; Punt et al. 2016). MSE performs forward
+simulations under a suite of pre-selected candidate strategies to
+determine which strategy achieves the best expected outcomes. Crucially,
+by limiting the analysis to a suite of candidate strategies over a
+finite number of replicate simulations, this approach is able to
+accommodate substantially greater complexity and uncertainty than has
+been possible with more formal optimal control approaches we discuss
+below. Optimal control solutions rely on dynamic programming to consider
+all possible strategies (all possible sequences of harvest under all
+possible realizations of stock dynamics). As such, MSE can be viewed as
+an approximation to the optimal control solutions considered below, a
+notion that has been formalized in the literature on approximate dynamic
+programming (Nicol and Chadès 2011). Future work may be able to leverage
+the forward-simulation approach used in MSE to extend the POMDP methods
+introduced here to yet more complex dynamics.
 
 \hypertarget{optimal-management}{%
 \subsection{Optimal management}\label{optimal-management}}
@@ -691,7 +696,7 @@ assumptions. Early estimates have put possible error as high as 50\%
 (Clark and Kirkwood 1986) and more recent analyses have suggested an
 average of closer to 36\%, though with cases that may be much higher
 (Ralston et al. 2011). Consequently, range between 0 to 15\% provides a
-probably conservative estimate of typical unceratinty ranges, which we
+probably conservative estimate of typical uncertainty ranges, which we
 show is nevertheless large enough to drive substantially negative
 ecological and economic outcomes under management strategies that do not
 appropriately account for that error over the long run.
