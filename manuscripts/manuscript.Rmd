@@ -1,5 +1,5 @@
 ---
-title: "Resolving a paradox of measurement uncertainty in ecological management"
+title: "Resolving the measurement uncertainty paradox in ecological management"
 
 author:
   - name: "Authors removed during peer review"
@@ -369,6 +369,12 @@ adaptation of Mixed Observability MDP [@Ong2010] do not scale to the number
 of states and actions considered here. A value of information (VOI) analysis
 for POMDP [e.g. @Johnson2015; @Memarzadeh2016b], could identify when it
 is worthwhile to actively reduce measurement error.
+
+
+## Acknowledgements
+
+The authors wish to thank T. Essington for his insight into fisheries management, and
+the constructive feedback of the editor and anonymous reviewers.  CB also acknowledges computational resources from NSF's XSEDE Jetstream (DEB160003) and Chameleon cloud platforms, as well as the support by the USDA Hatch project CA-B-INS-0162-H.
 
 
 
