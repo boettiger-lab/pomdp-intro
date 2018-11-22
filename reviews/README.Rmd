@@ -52,3 +52,27 @@ writeLines(gpg_decrypt(gpg_letter2), letter2)
 ```
 
 
+
+
+
+
+
+
+
+Encrypt letter 3
+
+```{r}
+letter3 <- "review-reply-3.Rmd"
+gpg_letter3 <- "review-reply-3.Rmd.gpg"
+
+msg <- gpg_encrypt(letter3, receiver = cboettig, signer = cboettig)
+writeLines(msg, gpg_letter3)
+```
+
+Unencrypt committed gpg versions:
+
+
+```{r}
+writeLines(gpg_decrypt(gpg_letter3), letter3)
+```
+
