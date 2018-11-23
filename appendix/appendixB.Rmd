@@ -19,6 +19,8 @@ library(sarsop)
 library(nimble)
 library(parallel)
 library(gridExtra)
+library(tictoc)
+tic()
 ```
 
 ```{r plotting, include = FALSE}
@@ -424,3 +426,28 @@ ram_ex %>%
   scale_color_manual(values = colors) +
   facet_wrap(~commonname, scales = "free", ncol=1)  
 ```
+
+
+
+
+\pagebreak
+
+Total runtime:
+
+```{r}
+toc()
+```
+
+Hardware:
+
+```{r}
+system2("grep", c("MemTotal", "/proc/meminfo"), stdout = TRUE)
+system2('grep', '"model name" /proc/cpuinfo', stdout = TRUE)
+```
+
+Software:
+
+```{r}
+sessionInfo()
+```
+

@@ -17,6 +17,9 @@ bibliography: ../manuscripts/citations.bib
 knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf", echo=TRUE)
 ```
 
+\pagebreak
+
+# Setup
 
 The POMDP calculations presented here are performed using the `sarsop` R package, which we have written to provide a general purpose implementation of the SARSOP algorithm of @Kurniawati2008. The version used in this analysis can be installed from GitHub using the command: `devtools::install_github("boettiger-lab/sarsop@0.5.0")`.  
 
@@ -34,7 +37,7 @@ library(ggplot2)
 library(Cairo)
 library(extrafont)
 library(hrbrthemes)
-
+library(tictoc)
 extrafont::loadfonts()
 hrbrthemes::import_roboto_condensed() 
 ggplot2::theme_set(hrbrthemes::theme_ipsum_rc())
@@ -56,6 +59,7 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```
 
 ```{r}
+tic()
 options(mc.cores=parallel::detectCores())
 log_dir <- "../data/observe_harvest_recruit" # Store the computed solution files here
 
@@ -672,6 +676,30 @@ policies_w_priors %>%
   coord_cartesian(xlim = c(0,1), ylim = c(0,.8)) + 
   theme(legend.position = "bottom")
 ```
+
+\pagebreak
+
+Total runtime:
+
+```{r}
+toc()
+```
+
+Hardware:
+
+```{r}
+system2("grep", c("MemTotal", "/proc/meminfo"), stdout = TRUE)
+system2('grep', '-m 1 "model name" /proc/cpuinfo', stdout = TRUE)
+```
+
+Software:
+
+```{r}
+sessionInfo()
+```
+
+
+\pagebreak
 
 # References
 
