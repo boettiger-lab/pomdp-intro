@@ -14,7 +14,7 @@ bibliography: ../manuscripts/citations.bib
 
 
 ```{r knitr, include=FALSE}
-knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf", echo=TRUE)
+knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=FALSE, dev="cairo_pdf", echo=TRUE)
 ```
 
 \pagebreak
@@ -61,7 +61,7 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```{r}
 tic()
 options(mc.cores=parallel::detectCores())
-log_dir <- "../data/observe_harvest_recruit" # Store the computed solution files here
+log_dir <- "../data/appendixA" # Store the computed solution files here
 
 ```
 
@@ -146,7 +146,7 @@ det_sims <-
          f, x0, Tmax, 
          .id = "method") 
 
-write_csv(det_sims, "../data/observe_harvest_recruit/det_sims.csv")
+write_csv(det_sims, "../data/appendixA/det_sims.csv")
 ```
 
 
@@ -230,8 +230,8 @@ Each scenario (parameter combination of `sigma_g`, `sigma_m`, and so forth) resu
 
 Because this solution is computationally somewhat intensive, be sure to have ~ 4 GB RAM per core if running the 9 models in parallel.  Alternately, readers can skip the evaluation of this code chunk and read the cached solution from the `policyx` file using the `*_from_log` functions that follow:
 
-```{r eval=!file.exists(file.path(log_dir, "meta.csv"))}
-dir.create(log_dir)
+```{r}
+dir.create(log_dir, FALSE)
 system.time(
   alphas <- 
     parallel::mclapply(1:length(models), 
@@ -248,7 +248,7 @@ system.time(
              models[[i]]$observation,
              models[[i]]$reward,
              discount = discount,
-             precision = 0.00000002,
+             precision = 1e-8,
              timeout = 15000,
              log_dir = log_dir,
              log_data = log_data)
@@ -257,15 +257,6 @@ system.time(
 
 ```
 
-We can read the stored solution from the log:
-
-```{r}
-meta <- meta_from_log(data.frame(model="gs", discount=discount), log_dir) %>% 
-  mutate(scenario = as.character(scenario)) %>%
-  left_join(meta) %>% 
-  arrange(scenario)
-alphas <- alphas_from_log(meta, log_dir)
-```
 
 
 ------
@@ -294,7 +285,7 @@ static_sims <-
 
 ## Simulating the POMDP policies under uncertainty
 
-```{r pomdp_sims, eval=!file.exists(file.path(log_dir, "pomdp_sims.csv"))}
+```{r pomdp_sims}
 set.seed(12345)
 
 unif_prior <- rep(1, length(states)) / length(states)
@@ -382,7 +373,7 @@ sims %>%
 
 While the POMDP approach requires an estimate of the measurement error, the precise distribution of measurement errors will itself be unknown in most cases.  However, the POMDP approach is quite robust to overestimation of the measurement error.  As an extreme example of this, we consider the case where the POMDP solution assumes the largest measurement error level considered here, $\sigma_m = 0.15$, while performing simulations in which measurements occur without error:
 
-```{r overest, eval=!file.exists(file.path(log_dir, "pomdp_overest_sims.csv"))}
+```{r overest}
 set.seed(12345)
 true <- 3 # sigma_g = 0.15, sigma_m = 0
 source(system.file("examples/pomdp_overestimates.R", package="sarsop")) # portable example code
@@ -679,23 +670,26 @@ policies_w_priors %>%
 
 \pagebreak
 
+# System Information
+
+
 Total runtime:
 
 ```{r}
 toc()
 ```
 
-Hardware:
+### Hardware:
 
 ```{r}
 system2("grep", c("MemTotal", "/proc/meminfo"), stdout = TRUE)
-system2('grep', '-m 1 "model name" /proc/cpuinfo', stdout = TRUE)
+system2('grep', '"model name" /proc/cpuinfo', stdout = TRUE)
 ```
 
-Software:
+### Software:
 
 ```{r}
-sessionInfo()
+devtools::session_info()
 ```
 
 

@@ -1,0 +1,4 @@
+id,load_time_sec,init_time_sec,run_time_sec,final_precision,end_condition,n_states,n_obs,n_actions,discount,date,model,r,K,sigma_g,sigma_m,noise,scenario
+f27859c20b8c0d73dc77163c25e12c17,3.6,1.24,15000,2.79364e-05,  Preset timeout reached,100,100,100,0.95,2018-11-30 11:08:01,gs,0.75,1,0.02,0,normal,1
+f27859c20b8c0d73dc77163c25e12c17,4.01,3.4,15000.1,7.48622e-05,  Preset timeout reached,100,100,100,0.95,2018-11-30 11:09:28,gs,0.75,1,0.1,0,normal,2
+f27859c20b8c0d73dc77163c25e12c17,4.19,4.62,15000.1,4.59653e-05,  Preset timeout reached,100,100,100,0.95,2018-11-30 11:09:31,gs,0.75,1,0.15,0,normal,3

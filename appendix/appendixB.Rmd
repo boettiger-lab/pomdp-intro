@@ -4,12 +4,16 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
+\renewcommand{\thefigure}{S\arabic{figure}}
+
 # Section 1: Model estimates from data
 
 Computes model parameter estimates for selected stocks in RAM using NIMBLE.
 
 ```{r knitr, include=FALSE}
-knitr::opts_chunk$set(comment="", message=FALSE, warning = FALSE, cache=TRUE, dev="cairo_pdf")
+knitr::opts_chunk$set(comment = "", message = FALSE, 
+                      warning = FALSE, cache = FALSE, 
+                      dev = "cairo_pdf")
 ```
   
 ```{r libraries, message=FALSE}
@@ -23,7 +27,7 @@ library(tictoc)
 tic()
 ```
 
-```{r plotting, include = FALSE}
+```{r plotting, include = FALSE, cache = FALSE}
 ## This chunk is optional, just tweaks plot appearance / fonts
 library(printr)
 library(ggthemes)
@@ -43,6 +47,7 @@ colors <- set_names(c(palette[c(1:4,2,5)], "grey", "black"),
                       "POMDP: medium prior",
                       "biomass",
                       "catch"))
+## Overwriting is convenient, but breaks any plot not using these names!
 scale_colour_discrete <- function(...) scale_colour_manual(..., values=colors)
 scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```
@@ -122,7 +127,9 @@ fit_models <- function(fish, code){
   
   ## Rescale data
   N <- dim(fish)[1]
-  scaled_data <- data.frame(t = 1:N, y = fish$scaled_biomass, a = fish$scaled_catch)
+  scaled_data <- data.frame(t = 1:N, 
+                            y = fish$scaled_biomass, 
+                            a = fish$scaled_catch)
   data = data.frame(x = scaled_data$y)
 
   ## Compile  model
@@ -164,16 +171,6 @@ fits
 ```
 
 
-```{r include = FALSE, eval = FALSE}
-## Do the estimates make sense?  Consider simulation from models, 
-## under this historical harvests, compared to historical trajectories
-examples %>% ungroup() %>%
-  select(year, scaled_biomass, scaled_catch, commonname) %>%
-  gather(stock, biomass, -year, -commonname) %>%
-  ggplot(aes(year, biomass, col=stock)) + 
-  geom_line() + facet_wrap(~commonname, scales = "free")
-```
-
 
 ```{r}
 pars <- fits %>% ungroup() %>% select(commonname, r, K, sigma_g) 
@@ -189,7 +186,7 @@ pars
 
 ```{r}
 options(mc.cores = parallel::detectCores()) # Reserve ~ 10 GB per core
-log_dir <- "../data/ram_ex"
+log_dir <- "../data/appendixB"
 ```
 
 
@@ -249,8 +246,8 @@ models <-
 
 Here's the slowest part: computing POMDP alpha vectors. 
 
-```{r eval=FALSE}
-dir.create(log_dir)
+```{r message = FALSE, output = "hide"}
+dir.create(log_dir, FALSE)
 options(mc.cores = 1)
 
 ## POMDP solution (slow, >20,000 seconds per loop memory intensive)
@@ -271,8 +268,8 @@ system.time(
              models[[i]]$observation,
              models[[i]]$reward,
              discount = discount,
-             precision = 2e-6,
-             timeout = 25000,
+             precision = 2e-8,
+             timeout = 26000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -283,17 +280,6 @@ system.time(
 ```
 
 
-
-```{r message=FALSE}
-meta <- meta_from_log(data.frame(model="gs"), log_dir)  %>% 
-  mutate(scenario = as.character(scenario)) %>%
-  left_join(
-    select(meta, sigma_m, commonname, scenario),   
-    by = c("scenario", "sigma_m", "commonname")) %>% 
-  arrange(scenario)
-alphas <- alphas_from_log(meta, log_dir)
-#models <- models_from_log(meta)
-```
 
 
 
@@ -412,14 +398,14 @@ sims <- pomdp_sims %>%
   select(-sigma_m) %>%
   bind_rows(historical)
 
-write_csv(sims,file.path(log_dir, "ram_ex.csv"))
+write_csv(sims,file.path(log_dir, "appendixB.csv"))
 ```
 
 Final plot, as in paper but including MSY:
 
 ```{r}
-ram_ex <- read_csv(file.path(log_dir, "ram_ex.csv"))
-ram_ex %>%
+appendixB <- read_csv(file.path(log_dir, "appendixB.csv"))
+appendixB %>%
   filter(model %in% c("biomass", "catch", "POMDP", "CE", "TAC", "MSY")) %>%
   ggplot(aes(year, stock, col=model)) +
   geom_line(lwd=1) +
@@ -432,22 +418,24 @@ ram_ex %>%
 
 \pagebreak
 
+# System Information
+
 Total runtime:
 
 ```{r}
 toc()
 ```
 
-Hardware:
+### Hardware:
 
 ```{r}
 system2("grep", c("MemTotal", "/proc/meminfo"), stdout = TRUE)
 system2('grep', '"model name" /proc/cpuinfo', stdout = TRUE)
 ```
 
-Software:
+### Software:
 
 ```{r}
-sessionInfo()
+devtools::session_info()
 ```
 

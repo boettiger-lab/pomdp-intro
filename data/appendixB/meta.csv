@@ -1,0 +1,2 @@
+id,load_time_sec,init_time_sec,run_time_sec,final_precision,end_condition,n_states,n_obs,n_actions,discount,date,model,r,K,sigma_g,sigma_m,noise,commonname,scenario
+db1c2cadc1ed0fc1b5f9cb7b16ef8370,12.21,8.73,26000,1.84882e-05,  Preset timeout reached,150,150,150,0.95,2018-11-28 03:28:34,gs,1.03877826554668,1.19611167314838,0.1118369879431,0,normal,Argentine hake,1
