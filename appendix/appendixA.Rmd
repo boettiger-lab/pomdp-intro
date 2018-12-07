@@ -374,7 +374,7 @@ sims %>%
 
 While the POMDP approach requires an estimate of the measurement error, the precise distribution of measurement errors will itself be unknown in most cases.  However, the POMDP approach is quite robust to overestimation of the measurement error.  As an extreme example of this, we consider the case where the POMDP solution assumes the largest measurement error level considered here, $\sigma_m = 0.15$, while performing simulations in which measurements occur without error:
 
-```{r overest}
+```{r overest, eval = !file.exists(file.path(log_dir, "pomdp_overest_sims.csv"))}
 set.seed(12345)
 true <- 3 # sigma_g = 0.15, sigma_m = 0
 source(system.file("examples/pomdp_overestimates.R", package="sarsop")) # portable example code
