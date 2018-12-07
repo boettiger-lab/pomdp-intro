@@ -1,7 +1,0 @@
-pipeline:
-  build:
-    image: cboettig/labnotebook:3.4.3
-    commands:
-      - R -e 'devtools::install(dep=TRUE)'
-      - R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
-
