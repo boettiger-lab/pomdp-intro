@@ -285,7 +285,7 @@ static_sims <-
 
 ## Simulating the POMDP policies under uncertainty
 
-```{r pomdp_sims eval=!file.exists(file.path(log_dir, "pomdp_sims.csv"))}
+```{r pomdp_sims, eval=!file.exists(file.path(log_dir, "pomdp_sims.csv"))}
 
 set.seed(12345)
 
