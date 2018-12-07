@@ -72,7 +72,7 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 
 
 ```{r load_data, message=FALSE, warning=FALSE}
-log_dir <- "../data/observe_harvest_recruit" # solution files here
+log_dir <- "../data/appendixA" # solution files here
 
 ## Fig1, Fig2
 sims <- read_csv(file.path(log_dir, "sims.csv"), col_types = "inicnnn")
@@ -84,7 +84,7 @@ overest_sims <- read_csv(file.path(log_dir, "overest_sims.csv"))
 policies_w_priors <- read_csv(file.path(log_dir, "policies_w_priors.csv"))
 
 ## Fig 5
-ram_ex <- read_csv(file.path(log_dir, "../ram_ex/ram_ex.csv"))
+ram_ex <- read_csv(file.path("../data/appendixB/appendixB.csv"))
 
 ```
 

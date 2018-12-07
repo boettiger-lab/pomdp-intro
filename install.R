@@ -1,1 +1,1 @@
-tinytex::tlmgr_install(c("lineno", "ec", "psnfss"))
+tinytex::tlmgr_install(c("lineno", "ec", "psnfss", "endfloat"))
