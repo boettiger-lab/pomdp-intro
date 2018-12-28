@@ -64,23 +64,23 @@
 % Pandoc toggle for numbering sections (defaults to be off)
 \setcounter{secnumdepth}{0}
 % Pandoc header
+
 \journal{The American Naturalist}
-\usepackage{lineno}
-\linenumbers
-\modulolinenumbers[3]
-\usepackage{setspace}
-\doublespacing
-
-
+\usepackage[nomarkers]{endfloat}
 
 \begin{document}
 \begin{frontmatter}
 
   \title{Resolving the measurement uncertainty paradox in ecological management}
-    \author[]{Authors removed during peer review}
+    \author[a]{Milad Memarzadeh}
   
   
-    
+    \author[a, 1]{Carl Boettiger}
+  
+  
+      \address[a]{Dept of Environmental Science, Policy, and Management, University of
+California Berkeley, Berkeley CA 94720-3114, USA}
+  
   \begin{abstract}
   Ecological management and decision-making typically focus on uncertainty
   about the future, but surprisingly little is known about how to account
@@ -634,43 +634,40 @@ The POMDP problem is posed identically to that of the MDP problem, with
 the addition of an observation process The POMDP problem for fisheries
 question considered here can be summarized as follows:
 
-\begin{itemize}
-\item
-  Transition process (state equation): \(T(x_t, x_{t+1}, a_t)\): the
-  probability that a system is in state \(x_{t+1}\) at time \(t+1\)
-  given that it began in state \(x_t\) at time \(t\) and the manager
-  took action \(a_t\). In our context, this relationship is given by the
-  Gordon-Schaefer stock recruitment function \(f\) with normally
-  distributed growth uncertainty
-  \(x_{t+1} \sim \mathcal{N}(f(x_t,a_t), \sigma_g)\), truncated at zero
-  to exclude negative population sizes. The action \(a_t\) represents
-  the harvest quota set for the fishery. Attempting to implement a quota
-  the exceeds the true population size results in collapse of the
-  fishery. As Clark and Kirkwood (1986) eloquently argues, assuming that
-  extinction is impossible regardless of fishing intensity would
-  unreasonably bias the decision problem.
-\item
-  Observation function: \(O(x_t,y_t,a_{t-1})\) the probability of
-  observing state \(y_t\) given a system in state \(x_t\). In principle,
-  the action chosen can influence the precision of the observation. In
-  our case, we simply assume normally distributed errors around the true
-  state, \(y_t \sim \mathcal{N}(x_t, \sigma_m)\), truncated at zero to
-  exclude negative population sizes.
-\item
-  Utility function: \(U(x_t,a_t)\), the utility received at time \(t\)
-  for taking action \(a_t\), given that the system is in state \(x_t\).
-  For simplicity of analysis, we will simply set the utility to be equal
-  to the harvested stock: \(U(x_t, a_t) = \min(x_t, a_t)\), indicating
-  that realized harvest cannot be negative. This choice ensures that in
-  the case of no uncertainty (\(\sigma_g = \sigma_m = 0\)), the optimal
-  solution matches that expected under a simple MSY calculation. More
-  realistic utility functions may include diminishing returns with
-  increasing harvest (supply and demand effects), and the cost of
-  fishing, both of which act to suppress large harvests. By focusing on
-  a simple utility we can be sure that our comparison to MSY is driven
-  by the treatment of uncertainty rather than merely differing economic
-  assumptions.
-\end{itemize}
+\textbf{Transition} process (state equation): \(T(x_t, x_{t+1}, a_t)\):
+the probability that a system is in state \(x_{t+1}\) at time \(t+1\)
+given that it began in state \(x_t\) at time \(t\) and the manager took
+action \(a_t\). In our context, this relationship is given by the
+Gordon-Schaefer stock recruitment function \(f\) with normally
+distributed growth uncertainty
+\(x_{t+1} \sim \mathcal{N}(f(x_t,a_t), \sigma_g)\), truncated at zero to
+exclude negative population sizes. The action \(a_t\) represents the
+harvest quota set for the fishery. Attempting to implement a quota the
+exceeds the true population size results in collapse of the fishery. As
+Clark and Kirkwood (1986) eloquently argues, assuming that extinction is
+impossible regardless of fishing intensity would unreasonably bias the
+decision problem.
+
+\textbf{Observation} function: \(O(x_t,y_t,a_{t-1})\) the probability of
+observing state \(y_t\) given a system in state \(x_t\). In principle,
+the action chosen can influence the precision of the observation. In our
+case, we simply assume normally distributed errors around the true
+state, \(y_t \sim \mathcal{N}(x_t, \sigma_m)\), truncated at zero to
+exclude negative population sizes.
+
+\textbf{Utility} function: \(U(x_t,a_t)\), the utility received at time
+\(t\) for taking action \(a_t\), given that the system is in state
+\(x_t\). For simplicity of analysis, we will simply set the utility to
+be equal to the harvested stock: \(U(x_t, a_t) = \min(x_t, a_t)\),
+indicating that realized harvest cannot be negative. This choice ensures
+that in the case of no uncertainty (\(\sigma_g = \sigma_m = 0\)), the
+optimal solution matches that expected under a simple MSY calculation.
+More realistic utility functions may include diminishing returns with
+increasing harvest (supply and demand effects), and the cost of fishing,
+both of which act to suppress large harvests. By focusing on a simple
+utility we can be sure that our comparison to MSY is driven by the
+treatment of uncertainty rather than merely differing economic
+assumptions.
 
 The optimization problem is to select the action \(a_t\) that will
 maximize the net present utility over all time. Future utility may be
@@ -1157,13 +1154,13 @@ computationally intensive optimization required for even simple models
 with stochastic dynamic programming, (while continuing to construct ever
 more complicated hierarchical models), engineers have chipped away at
 the decision problem to reveal algorithms such as SARSOP that make much
-larger dynamic programming problems tractable. Yes, we may need even
-more sophisticated algorithms to accommodate greater ecological
-complexity, yet we believe such numerical obstacles are no excuse for
-management by half measures. Rather, our example illustrates how
-ecologists and managers can learn from and leverage the tools developed
-in other disciplines to better face the challenges of management in a
-complex and changing world.
+larger dynamic programming problems tractable. We may need even more
+sophisticated algorithms to accommodate greater ecological complexity,
+yet we believe such numerical obstacles are no excuse for management by
+half measures. Rather, our example illustrates how ecologists and
+managers can learn from and leverage the tools developed in other
+disciplines to better face the challenges of management in a complex and
+changing world.
 
 \hypertarget{future-directions}{%
 \subsection{Future directions}\label{future-directions}}

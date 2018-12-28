@@ -1,49 +1,34 @@
 ---
 title: "Resolving the measurement uncertainty paradox in ecological management"
-
 author:
-  - name: "Authors removed during peer review"
-
-#  - name: "Milad Memarzadeh"
-#    affiliation: a
-#  - name: "Carl Boettiger"
-#    affiliation: a, 1
-#address:
-#  - code: a
-#    address: "Dept of Environmental Science, Policy, and Management, University of California Berkeley, Berkeley CA 94720-3114, USA"
-  
-
+  - name: "Milad Memarzadeh"
+    affiliation: a
+  - name: "Carl Boettiger"
+    affiliation: a, 1
+address:
+  - code: a
+    address: "Dept of Environmental Science, Policy, and Management, University of California Berkeley, Berkeley CA 94720-3114, USA"
 abstract: |
   Ecological management and decision-making typically focus on uncertainty about the future, but surprisingly little is known about how to account for uncertainty of the present: that is, the realities of having only partial or imperfect measurements.  Our primary paradigms for handling decisions under uncertainty -- the precautionary principle and optimal control -- have so far given contradictory results.  This paradox is best illustrated in the example of fisheries management, where many ideas that guide thinking about ecological decision making were first developed.  We find that simplistic optimal control approaches have repeatedly concluded that a manager should increase catch quotas when faced with greater uncertainty about the fish biomass. Current best practices take a more precautionary approach, decreasing catch quotas by a fixed amount to account for uncertainty.  Using comparisons to both simulated and historical catch data, we find that neither approach is sufficient to avoid stock collapses under moderate observational uncertainty.  Using partially observed Markov decision process (POMDP) methods, we demonstrate how this paradox arises from flaws in the standard theory, which contributes to over-exploitation of fisheries and increased probability of economic and ecological collapse.  In contrast, we find POMDP-based management avoids such over-exploitation while also generating higher economic value.  These results have significant implications for how we handle uncertainty in both fisheries and ecological management more generally.
-
-
 keywords:
   - POMDP,
   - measurement uncertainty,
   - decision theory,
   - fisheries,
   - conservation
-
-lineno: true
-
 bibliography: citations.bib
-#journal: "The American Naturalist"
 date: "`r Sys.Date()`"
 csl: the-american-naturalist.csl
 output: rticles::elsevier_article
 layout: 3p # review # review = doublespace, 3p = singlespace, 5p = two-column
-header-includes: |
-        \journal{The American Naturalist}
-        \usepackage{lineno}
-        \linenumbers
-        \modulolinenumbers[3]
-        \usepackage{setspace}
-        \doublespacing
+preamble: |
+  \journal{The American Naturalist}
+  \usepackage[nomarkers]{endfloat}
 
 ---
 
 ```{r libraries, include=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,  dev="cairo_pdf", cache = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE,  dev="cairo_pdf", cache = FALSE)
 library(tidyverse)
 library(gridExtra)
 ```
@@ -204,11 +189,11 @@ Algorithmic innovations from the robotics community have now made it possible to
 
 Precise definitions of both the (fully observed) MDPs and POMDPs (not to be confused with Markov Process Models and Hidden Markov Process Models -- methods for which estimate the model but do not involve the feedback of any decision process) in an ecological context can be found in @Williams2011, or in classic work from the engineering and robotics community [e.g. @Smallwood1973; @Sondik1978].  For convenience, we summarize the POMDP definition and common notation here.  The POMDP problem is posed identically to that of the MDP problem, with the addition of an observation process  The POMDP problem for fisheries question considered here can be summarized as follows:
 
-- Transition process (state equation): $T(x_t, x_{t+1}, a_t)$: the probability that a system is in state $x_{t+1}$ at time $t+1$ given that it began in state $x_t$ at time $t$ and the manager took action $a_t$.  In our context, this relationship is given by the Gordon-Schaefer stock recruitment function $f$ with normally distributed growth uncertainty $x_{t+1} \sim \mathcal{N}(f(x_t,a_t), \sigma_g)$, truncated at zero to exclude negative population sizes. The action $a_t$ represents the harvest quota set for the fishery. Attempting to implement a quota the exceeds the true population size results in collapse of the fishery.  As @Clark1986 eloquently argues, assuming that extinction is impossible regardless of fishing intensity would unreasonably bias the decision problem. 
+**Transition** process (state equation): $T(x_t, x_{t+1}, a_t)$: the probability that a system is in state $x_{t+1}$ at time $t+1$ given that it began in state $x_t$ at time $t$ and the manager took action $a_t$.  In our context, this relationship is given by the Gordon-Schaefer stock recruitment function $f$ with normally distributed growth uncertainty $x_{t+1} \sim \mathcal{N}(f(x_t,a_t), \sigma_g)$, truncated at zero to exclude negative population sizes. The action $a_t$ represents the harvest quota set for the fishery. Attempting to implement a quota the exceeds the true population size results in collapse of the fishery.  As @Clark1986 eloquently argues, assuming that extinction is impossible regardless of fishing intensity would unreasonably bias the decision problem. 
 
-- Observation function: $O(x_t,y_t,a_{t-1})$ the probability of observing state $y_t$ given a system in state $x_t$.  In principle, the action chosen can influence the precision of the observation. In our case, we simply assume normally distributed errors around the true state, $y_t \sim \mathcal{N}(x_t, \sigma_m)$, truncated at zero to exclude negative population sizes.  
+**Observation** function: $O(x_t,y_t,a_{t-1})$ the probability of observing state $y_t$ given a system in state $x_t$.  In principle, the action chosen can influence the precision of the observation. In our case, we simply assume normally distributed errors around the true state, $y_t \sim \mathcal{N}(x_t, \sigma_m)$, truncated at zero to exclude negative population sizes.  
 
-- Utility function: $U(x_t,a_t)$, the utility received at time $t$ for taking action $a_t$, given that the system is in state $x_t$.  For simplicity of analysis, we will simply set the utility to be equal to the harvested stock: $U(x_t, a_t) = \min(x_t, a_t)$, indicating that realized harvest cannot be negative.  This choice ensures that in the case of no uncertainty ($\sigma_g = \sigma_m = 0$), the optimal solution matches that expected under a simple MSY calculation. More realistic utility functions may include diminishing returns with increasing harvest (supply and demand effects), and the cost of fishing, both of which act to suppress large harvests. By focusing on a simple utility we can be sure that our comparison to MSY is driven by the treatment of uncertainty rather than merely differing economic assumptions.  
+**Utility** function: $U(x_t,a_t)$, the utility received at time $t$ for taking action $a_t$, given that the system is in state $x_t$.  For simplicity of analysis, we will simply set the utility to be equal to the harvested stock: $U(x_t, a_t) = \min(x_t, a_t)$, indicating that realized harvest cannot be negative.  This choice ensures that in the case of no uncertainty ($\sigma_g = \sigma_m = 0$), the optimal solution matches that expected under a simple MSY calculation. More realistic utility functions may include diminishing returns with increasing harvest (supply and demand effects), and the cost of fishing, both of which act to suppress large harvests. By focusing on a simple utility we can be sure that our comparison to MSY is driven by the treatment of uncertainty rather than merely differing economic assumptions.  
 
 The optimization problem is to select the action $a_t$ that will maximize the net present utility over all time. Future utility may be discounted by a factor $\gamma$, so that a value  $V$ in $t$ year is valued at $\gamma^t V$ today.  Numerically, each of these functions are defined over a discrete set of possible states, observations, and actions, and can thus be represented as a collection of matrices or tensors.  
 
@@ -347,7 +332,7 @@ If accounting for measurement uncertainty can resolve previous paradoxes and div
 
 Are the dynamics considered here too simple?  Our underlying model is undoubtedly much simpler than many of the age or stage structured models used in modern fisheries management -- aspects whose importance to ecological dynamics have been established well beyond fisheries as well.  Yet it is critical to bear in mind that this stylized one-dimensional model is used only to compare the relative performance of the different decision strategies considered here (TAC, CE, and POMDP) in order to illustrate the potential importance of uncertainty in measurement. There is little reason to believe CE or TAC would perform better under more complex cases such as age-structured models that only further deviate from the assumptions under which they were derived [e.g. @Holden2015]. POMDP approaches are in no way incompatible with more complex models, whether that be age structure or even more ambitious non-parametric representations defined directly from data using Gaussian Processes or other machine learning techniques [e.g. @Boettiger2015].  Simple models have always served as tools for comparison and intuition, and serve the same illustrative role here.  
 
-Is this approach too complex to be feasible? The importance of simple and effective rules of thumb in conservation management has been well documented [e.g. @Chades2011]. Sophisticated and computationally intensive approaches such as POMDP may seem improbable at a time when many areas of natural resource management, even simple, rule-of-thumb based methods struggle to take root.  There is no doubt that the solution method needed here is computationally intensive even for the simple model considered here, and will only become more so under greater ecological complexity.  Indeed, it was precisely such computational limitations that led to the shortcuts in work such as @Clark1986, with the ensuing potentially misleading conclusions. While in the following decades ecologists largely turned away from computationally intensive optimization required for even simple models with stochastic dynamic programming, (while continuing to construct ever more complicated hierarchical models), engineers have chipped away at the decision problem to reveal algorithms such as SARSOP that make much larger dynamic programming problems tractable.  Yes, we may need even more sophisticated algorithms to accommodate greater ecological complexity, yet we believe such numerical obstacles are no excuse for management by half measures.  Rather, our example illustrates how ecologists and managers can learn from and leverage the tools developed in other disciplines to better face the challenges of management in a complex and changing world.  
+Is this approach too complex to be feasible? The importance of simple and effective rules of thumb in conservation management has been well documented [e.g. @Chades2011]. Sophisticated and computationally intensive approaches such as POMDP may seem improbable at a time when many areas of natural resource management, even simple, rule-of-thumb based methods struggle to take root.  There is no doubt that the solution method needed here is computationally intensive even for the simple model considered here, and will only become more so under greater ecological complexity.  Indeed, it was precisely such computational limitations that led to the shortcuts in work such as @Clark1986, with the ensuing potentially misleading conclusions. While in the following decades ecologists largely turned away from computationally intensive optimization required for even simple models with stochastic dynamic programming, (while continuing to construct ever more complicated hierarchical models), engineers have chipped away at the decision problem to reveal algorithms such as SARSOP that make much larger dynamic programming problems tractable.  We may need even more sophisticated algorithms to accommodate greater ecological complexity, yet we believe such numerical obstacles are no excuse for management by half measures.  Rather, our example illustrates how ecologists and managers can learn from and leverage the tools developed in other disciplines to better face the challenges of management in a complex and changing world.  
 
 
 
