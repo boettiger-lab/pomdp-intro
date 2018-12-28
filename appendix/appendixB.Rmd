@@ -24,6 +24,7 @@ library(nimble)
 library(parallel)
 library(gridExtra)
 library(tictoc)
+library(furrr)
 tic()
 ```
 
@@ -67,8 +68,7 @@ path <- unzip("ramlegacy.zip")
 sheets <- readxl::excel_sheets(path)
 ram <- lapply(sheets, readxl::read_excel, path = path)
 names(ram) <- sheets
-unlink("ramlegacy.zip")
-unlink("RLSADB v3.0 (assessment data only).xlsx")
+
 ramlegacy <- 
   ram$timeseries_values_views %>%
   select(assessid, stockid, stocklong, year, SSB, TC) %>%
@@ -185,7 +185,7 @@ pars
 
 
 ```{r}
-options(mc.cores = parallel::detectCores()) # Reserve ~ 10 GB per core
+options(mc.cores = 6) # Reserve ~ 10 GB per core
 log_dir <- "../data/appendixB"
 ```
 
@@ -228,8 +228,10 @@ Create the model matrices (transition, observation, and reward matrix):
 
 
 ```{r}
+plan(multiprocess)
+
 models <- 
-  parallel::mclapply(1:dim(meta)[1], 
+  furrr::future_map(1:dim(meta)[1], 
                      function(i){
                        fisheries_matrices(
                          states = states,
@@ -248,12 +250,11 @@ Here's the slowest part: computing POMDP alpha vectors.
 
 ```{r message = FALSE, output = "hide"}
 dir.create(log_dir, FALSE)
-options(mc.cores = 1)
-
-## POMDP solution (slow, >20,000 seconds per loop memory intensive)
+plan(multiprocess)
+## POMDP solution 
 system.time(
   alphas <- 
-    parallel::mclapply(1:length(models), 
+    furrr::future_map(1:length(models), 
     function(i){
       log_data <- data.frame(model = "gs", 
                              r = meta[i, "r"][[1]], 
@@ -268,8 +269,8 @@ system.time(
              models[[i]]$observation,
              models[[i]]$reward,
              discount = discount,
-             precision = 2e-8,
-             timeout = 26000,
+             precision = 2e-6,
+             timeout = 25000,
              log_dir = log_dir,
              log_data = log_data)
     })
@@ -312,8 +313,8 @@ statics <- function(P){
 
 policy_pars <- 
   pars %>% 
-  rowwise() %>% 
-  do(statics(.))
+  transpose() %>% 
+  map_df(statics)
 ```  
 
 Convert example data into discrete index space.
@@ -428,14 +429,24 @@ toc()
 
 ### Hardware:
 
-```{r}
+```{r include=FALSE}
+## allow resizing output font in latex
+def.chunk.hook  <- knitr::knit_hooks$get("chunk")
+knitr::knit_hooks$set(chunk = function(x, options) {
+  x <- def.chunk.hook(x, options)
+  ifelse(options$size != "normalsize", paste0("\\", options$size,"\n\n", x, "\n\n \\normalsize"), x)
+})
+```
+
+
+```{r  size="tiny"}
 system2("grep", c("MemTotal", "/proc/meminfo"), stdout = TRUE)
 system2('grep', '"model name" /proc/cpuinfo', stdout = TRUE)
 ```
 
 ### Software:
 
-```{r}
+```{r size="tiny"}
 devtools::session_info()
 ```
 
