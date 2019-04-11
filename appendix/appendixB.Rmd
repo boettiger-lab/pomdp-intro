@@ -54,17 +54,9 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```
 
 
-```{r}
-if(!file.exists("ramlegacy.zip")){
-download.file(paste0(
-  "https://depts.washington.edu/ramlegac/wordpress/databaseVersions/",
-  "RLSADB_v3.0_(assessment_data_only)_excel.zip"),
-  "ramlegacy.zip")
-}
-```
 
 ```{r}
-path <- unzip("ramlegacy.zip")
+path <- "../data/appendixB/ramlegacy_v3.0.xlsx"
 sheets <- readxl::excel_sheets(path)
 ram <- lapply(sheets, readxl::read_excel, path = path)
 names(ram) <- sheets

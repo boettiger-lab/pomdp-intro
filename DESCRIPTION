@@ -3,5 +3,5 @@ Package: pomdpintro
 Version: 0.1.0
 Depends: nimble, tidyverse, sarsop, MDPtoolbox, rmarkdown, printr, parallel, gridExtra, rticles, furrr
 Suggests: extrafont, hrbrthemes, Cairo, ggthemes, tictoc
-Remotes: boettiger-lab/sarsop
+Remotes: boettiger-lab/sarsop@0.6.1
 
