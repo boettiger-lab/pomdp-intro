@@ -54,13 +54,25 @@ scale_fill_discrete <- function(...) scale_fill_manual(..., values=colors)
 ```
 
 
+```{r}
+#if(!file.exists("ramlegacy.zip")){
+#download.file(paste0(
+#  "https://depts.washington.edu/ramlegac/wordpress/databaseVersions/",
+#  "RLSADB_v3.0_(assessment_data_only)_excel.zip"),
+#  "ramlegacy.zip")
+#}
+## Use more robust source
+#path <- unzip("ramlegacy.zip")
+#sheets <- readxl::excel_sheets(path)
+#ram <- lapply(sheets, readxl::read_excel, path = path)
+#names(ram) <- sheets
+library(ramlegacy)
+download_ramlegacy("3.0", overwrite=TRUE, quiet = TRUE)
+ram <- load_ramlegacy("3.0")
+```
+
 
 ```{r}
-path <- "../data/appendixB/ramlegacy_v3.0.xlsx"
-sheets <- readxl::excel_sheets(path)
-ram <- lapply(sheets, readxl::read_excel, path = path)
-names(ram) <- sheets
-
 ramlegacy <- 
   ram$timeseries_values_views %>%
   select(assessid, stockid, stocklong, year, SSB, TC) %>%

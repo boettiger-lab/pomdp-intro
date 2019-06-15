@@ -122,7 +122,6 @@
         <group delimiter=", ">
           <text variable="publisher"/>
           <text variable="publisher-place"/>
-          <text variable="DOI" prefix="DOI:"/>
         </group>
       </if>
       <else>
@@ -341,7 +340,6 @@
         <group delimiter=", " prefix=". ">
           <text macro="event"/>
           <text macro="publisher"/>
-          <text variable="DOI" prefix="DOI:"/>
         </group>
       </group>
     </layout>

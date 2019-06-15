@@ -1,6 +1,7 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
 language: R
+dist: xenial
 cache: packages
 script: 
   - travis_wait 30 R -e 'rmarkdown::render("appendix/appendixA.Rmd")'
