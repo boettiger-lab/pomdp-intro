@@ -3,6 +3,8 @@
 
 [![Binder](http://mybinder.org/badge.svg)](http://beta.mybinder.org/v2/gh/boettiger-lab/pomdp-intro/master?urlpath=rstudio)
 [![Build Status](https://travis-ci.com/boettiger-lab/pomdp-intro.svg?token=HrMbVv2Gfn8BzLNkrr1q&branch=master)](https://travis-ci.com/boettiger-lab/pomdp-intro)
+[![DOI](https://zenodo.org/badge/104901554.svg)](https://zenodo.org/badge/latestdoi/104901554)
+
 
 
 - Authors: Milad Memarzadeh, [Carl Boettiger](https://carlboettiger.info)
