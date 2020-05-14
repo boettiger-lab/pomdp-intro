@@ -1,4 +1,4 @@
-FROM rocker/binder:3.5.3
+FROM rocker/binder:3.6.2
 
 ## Copies your repo files into the Docker Container
 USER root
@@ -10,3 +10,5 @@ USER ${NB_USER}
 
 ## Run an install.R script, if it exists.
 RUN if [ -f DESCRIPTION ]; then R --quiet -e "devtools::install(dep=TRUE)"; fi
+
+RUN if [ -f install.R ]; then R --quiet -f install.R; fi
