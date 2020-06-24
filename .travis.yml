@@ -4,8 +4,8 @@ language: R
 dist: xenial
 cache: packages
 script: 
-  - travis_wait 30 R -e 'rmarkdown::render("appendix/appendixA.Rmd")'
-  - travis_wait 30 R -e 'rmarkdown::render("appendix/appendixB.Rmd")'
+  - travis_wait 60 R -e 'rmarkdown::render("appendix/appendixA.Rmd")'
+  - travis_wait 60 R -e 'rmarkdown::render("appendix/appendixB.Rmd")'
   - R -e 'rmarkdown::render("manuscripts/manuscript.Rmd")'
   
 ## Travis lacks enough memory to handle appendices
