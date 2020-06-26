@@ -1,12 +1,11 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 
-language: R
-dist: xenial
-cache: packages
-script: 
-  - travis_wait 120 R -e 'rmarkdown::render("appendix/appendixA.Rmd")'
-  - travis_wait 60 R -e 'rmarkdown::render("appendix/appendixB.Rmd")'
-  - R -e 'rmarkdown::render("manuscripts/manuscript.Rmd")'
+#language: R
+#cache: packages
+#script: 
+#  - travis_wait 120 R -e 'rmarkdown::render("appendix/appendixA.Rmd")'
+#  - travis_wait 60 R -e 'rmarkdown::render("appendix/appendixB.Rmd")'
+#  - R -e 'rmarkdown::render("manuscripts/manuscript.Rmd")'
   
 ## Travis lacks enough memory to handle appendices
 ## test that all .Rmd files can render 
@@ -16,14 +15,14 @@ script:
 
 
 ## Alternate recipe: use Docker instead of R travis
-#sudo: required
-#services:
-#  - docker
-#script:
-## Test on locked version
-#  - docker run -ti -v $(pwd):/home/rstudio/repo -w /home/rstudio/repo \
-#    rocker/verse:3.4.3 \
-#    R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
+sudo: required
+services:
+  - docker
+script:
+# Test on locked version
+  - docker run -ti -v $(pwd):/home/rstudio/repo -w /home/rstudio/repo \
+    rocker/verse:3.4.3 \
+    R -e 'lapply(list.files(pattern=".*.Rmd", recursive=TRUE), rmarkdown::render)'
 
 
 
