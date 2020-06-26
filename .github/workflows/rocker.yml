@@ -1,14 +1,13 @@
 name: Docker Actions
 on: [push]
 jobs:
-  my_job: 
+  render: 
     runs-on: ubuntu-latest
-    container: rocker/verse:3.6.2
+    container: rocker/verse:4.0.0
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: |-
-          installGithub.r --update FALSE clauswilke/ggtext
           Rscript -e "remotes::install_deps(dependencies = TRUE)"
       - name: Render mansucript
         run: |-
