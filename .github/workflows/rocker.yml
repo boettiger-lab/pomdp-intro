@@ -3,12 +3,13 @@ on: [push]
 jobs:
   render: 
     runs-on: ubuntu-latest
-    container: rocker/verse:4.0.2
+    container: rocker/verse:4.0.0
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: |-
           Rscript -e "remotes::install_deps(dependencies = TRUE)"
+          install2.r -r https://packagemanager.rstudio.com/all/291 igraph
       - name: Render mansucript
         run: |-
           Rscript -e "lapply(fs::dir_ls('.', glob='*.Rmd', recurse=TRUE), rmarkdown::render, envir = globalenv())"
