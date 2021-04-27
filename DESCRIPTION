@@ -1,7 +1,7 @@
 Type: Compendium
 Package: pomdpintro
-Version: 0.1.0
+Version: 0.2.0
 Depends: nimble, tidyverse, sarsop, MDPtoolbox, rmarkdown, printr, parallel, gridExtra, rticles, furrr, ramlegacy
-Suggests: extrafont, hrbrthemes, Cairo, ggthemes, tictoc, devtools
+Suggests: extrafont, hrbrthemes, Cairo, ggthemes, tictoc, devtools, igraph
 Remotes: boettiger-lab/sarsop
 
